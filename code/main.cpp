@@ -9,11 +9,6 @@
 #define PinEnMotor 5
 #define PinDir1Motor 6
 #define PinDir2Motor 7
-#define interruptPin 2
-#define TRefrescoAngulo 5 // tiempo en milisegundos entre cada lectura del angulo
-
-long encoder = 0;
-bool forward = true;
 
 class CServo{
 public:
@@ -35,8 +30,7 @@ void CServo::Setup(){
 }
 
 void CServo::MoverServo(int _angulo){
-  _angulo = constrain(_angulo,-27,27);
-  int _ang = map(_angulo, -27, 27, servoMAX, servoMIN);
+  int _ang = map(_angulo, -27, 27, servoMIN, servoMAX);
   //int _ang =40 - _angulo;
   Miservo.write(_ang);
 }
@@ -96,31 +90,6 @@ float angle(float x, float y){
   return result;
 }
 
-float Filtrar(float senyal){
-  // X es la señal
-  // Y es la salida filtrada
-  static float senyalAnterior = 0;
-  static float salidaFiltradaAnterior = 0;
-
-  float salidaFiltrada = 0.8*salidaFiltradaAnterior + 0.1*senyal+ 0.1*senyalAnterior;
-  salidaFiltradaAnterior = salidaFiltrada;
-  senyalAnterior = senyal;
-  return salidaFiltrada;
-
-}
-
-void encoderISR() {
-  if (forward == true) 
-  {
-    encoder ++;
-  }
-  else
-  {
-    encoder --;
-  }
-  
-}
-
 CServo MiCServo(3);
 Motor MiMotor(5,6,7);
 MPU9250 mpu;
@@ -129,27 +98,9 @@ float x0 = mpu.getMagX();
 float y0 = mpu.getMagY();
 float TotAngle;
 
-float getHeading(float MagX, float MagY)
-{
-  float heading=180*atan2(MagY,MagX)/PI;
-  if(heading < 0) heading +=360;
-  heading = Filtrar(heading);
-  return heading;
-}
-
-int ErrorDireccion(int bearing, int target){
-  int error = bearing - target;
-  if (error == 0) return 0;
-  if (error > 180) error -= 360;
-  if (error < -180) error += 360;
-  return -1*error;
-}
-
 void setup() {
-  pinMode(interruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), encoderISR, CHANGE);
   MiCServo.Setup();
-  Serial.begin(115200);
+  Serial.begin(9600);
   
   Wire.begin();
     delay(2000);
@@ -161,33 +112,16 @@ void setup() {
         }
     }
   loadCalibration();
-  Serial.println("Setup Terminado");
-
+  Serial.println("Programa no explota");
+  MiCServo.MoverServo(20);
+  //MiMotor.potencia(150);
+  //delay(1000);
   //MiMotor.potencia(0);
   
 }
 
 
 void loop(){
-  static int bearing = 0;
-  static uint32_t next_ms_angulo = millis()+TRefrescoAngulo;
-  if (millis() > next_ms_angulo){
-    if(mpu.update()){
-      next_ms_angulo += TRefrescoAngulo;
-      bearing = int(getHeading(mpu.getMagY(),mpu.getMagX()));
-      Serial.println(bearing);
-    }
-
-  }
-  static uint32_t tiempo_on = millis()+2000;
-  if (millis() > tiempo_on){
-    static int _target = bearing;
-    MiMotor.potencia(150);
-    MiCServo.MoverServo(ErrorDireccion(bearing,_target));
-  }
-
-
-
 
 }
 
@@ -211,5 +145,3 @@ void loop(){
     //delay(1000);
   //}
 //}
-
-
