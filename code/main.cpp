@@ -98,100 +98,95 @@ float x0 = mpu.getMagX();
 float y0 = mpu.getMagY();
 float TotAngle;
 
-void print_calibration() {
-    Serial.println("< calibration parameters >");
-    Serial.println("accel bias [g]: ");
-    Serial.print(mpu.getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    Serial.print(", ");
-    Serial.print(mpu.getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    Serial.print(", ");
-    Serial.print(mpu.getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    Serial.println();
-    Serial.println("gyro bias [deg/s]: ");
-    Serial.print(mpu.getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    Serial.print(", ");
-    Serial.print(mpu.getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    Serial.print(", ");
-    Serial.print(mpu.getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    Serial.println();
-    Serial.println("mag bias [mG]: ");
-    Serial.print(mpu.getMagBiasX());
-    Serial.print(", ");
-    Serial.print(mpu.getMagBiasY());
-    Serial.print(", ");
-    Serial.print(mpu.getMagBiasZ());
-    Serial.println();
-    Serial.println("mag scale []: ");
-    Serial.print(mpu.getMagScaleX());
-    Serial.print(", ");
-    Serial.print(mpu.getMagScaleY());
-    Serial.print(", ");
-    Serial.print(mpu.getMagScaleZ());
-    Serial.println();
+void Calibrar(){
+  mpu.verbose(true);
+  delay(1000);
+  mpu.calibrateMag();
+  mpu.calibrateAccelGyro();
+  mpu.verbose(false);
+  saveCalibration();
 }
+
+float offset;
 
 void setup() {
   MiCServo.Setup();
-  Serial.begin(9600);
+  Serial.begin(115200);
   
+  //Calibrar();
+
+
   Wire.begin();
-    delay(2000);
-
-     Serial.begin(115200);
-    Wire.begin();
-    delay(2000);
-
-    if (!mpu.setup(0x68)) {  // change to your own address
-        while (1) {
-            Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
-            delay(5000);
-        }
+  
+  if (!mpu.setup(0x68)) {  // change to your own address
+    while (1) {
+      Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
+      delay(5000);
+      }
     }
 
-    // calibrate anytime you want to
-    Serial.println("Accel Gyro calibration will start in 5sec.");
-    Serial.println("Please leave the device still on the flat plane.");
-    mpu.verbose(true);
-    delay(5000);
-    mpu.calibrateAccelGyro();
-
-    Serial.println("Mag calibration will start in 5sec.");
-    Serial.println("Please Wave device in a figure eight until done.");
-    delay(5000);
-    mpu.calibrateMag();
-
-    print_calibration();
-
-    mpu.verbose(false);
-    
   loadCalibration();
+
   Serial.println("Programa no explota");
   MiCServo.MoverServo(20);
   //MiMotor.potencia(150);
   //delay(1000);
   //MiMotor.potencia(0);
-  
+
+  int num =0;
+  float tot =0;
+  while (num < 3000){
+    if (mpu.update()){
+      num = num +1;
+      tot = tot + mpu.getGyroZ();
+    }
+    delay(5);
+  }
+  offset = tot/num;
+  Serial.println(offset);
 }
 
-
-void print_yaw() {
-    Serial.print("Yaw: ");
-    Serial.println(mpu.getYaw(), 2);
+void print_roll_pitch_yaw() {
+    Serial.print("Yaw, Pitch, Roll, gyroZ: ");
+    Serial.print(mpu.getYaw(), 2);
+    Serial.print(", ");
+    Serial.print(mpu.getPitch(), 2);
+    Serial.print(", ");
+    Serial.print(mpu.getRoll(), 2);
+    Serial.print(", ");
+    Serial.println(mpu.getGyroZ(), 2);
 }
 
+float valor = 0;
 
-
-void loop(){
-  
-   if (mpu.update()) {
+void loop() {
+      if (mpu.update()) {
         static uint32_t prev_ms = millis();
             if (millis() > prev_ms + 25) {
-                print_yaw();
+                //print_roll_pitch_yaw();
                 prev_ms = millis();
         }
     }
 
+    static uint32_t prev_ms2 = millis();
+            if (millis() > prev_ms2 + 5) {
+                valor = valor + mpu.getGyroZ() - offset;
+                prev_ms2 = millis();
+        }
+
+    static uint32_t prev_ms3 = millis();
+            if (millis() > prev_ms3 + 200) {
+                Serial.println(valor);
+                prev_ms3 = millis();
+        }
+    
 }
+
+//void loop(){
+  //Serial.print(mpu.getYaw());
+  //delay(1000);
+
+//}
 
 //void loop() {
 // if (mpu.update()) {
