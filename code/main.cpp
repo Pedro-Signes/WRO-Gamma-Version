@@ -10,7 +10,7 @@
 #define PinDir1Motor 6
 #define PinDir2Motor 7
 
-class CServo{
+class CServo{  //maneja el servo
 public:
   CServo(byte PinServo);
   void MoverServo(int _angulo);
@@ -29,13 +29,12 @@ void CServo::Setup(){
   Miservo.write(40);
 }
 
-void CServo::MoverServo(int _angulo){
+void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
   int _ang = map(_angulo, -27, 27, servoMIN, servoMAX);
-  //int _ang =40 - _angulo;
   Miservo.write(_ang);
 }
 
-class Motor{
+class Motor{  
   public:
   Motor(byte PinEn,byte PinDir1,byte PinDir2);
   void potencia(int pot);
@@ -129,13 +128,10 @@ void setup() {
 
   Serial.println("Programa no explota");
   MiCServo.MoverServo(20);
-  //MiMotor.potencia(150);
-  //delay(1000);
-  //MiMotor.potencia(0);
 
   int num =0;
   float tot =0;
-  while (num < 3000){
+  while (num < 1000){
     if (mpu.update()){
       num = num +1;
       tot = tot + mpu.getGyroZ();
@@ -146,43 +142,46 @@ void setup() {
   Serial.println(offset);
 }
 
-void print_roll_pitch_yaw() {
-    Serial.print("Yaw, Pitch, Roll, gyroZ: ");
+void print_yaw_gyroz() {
+    Serial.print("Yaw, GyroZ: ");
     Serial.print(mpu.getYaw(), 2);
-    Serial.print(", ");
-    Serial.print(mpu.getPitch(), 2);
-    Serial.print(", ");
-    Serial.print(mpu.getRoll(), 2);
     Serial.print(", ");
     Serial.println(mpu.getGyroZ(), 2);
 }
 
 float valor = 0;
+uint32_t Durracion_de_la_muestra = 0;
+
 
 void loop() {
-      if (mpu.update()) {
-        static uint32_t prev_ms = millis();
-            if (millis() > prev_ms + 25) {
-                //print_roll_pitch_yaw();
-                prev_ms = millis();
-        }
-    }
+  static uint32_t prev_ms = millis();
+    if (mpu.update()) {
+        Durracion_de_la_muestra = millis() - prev_ms;
+        prev_ms = millis();
+        valor = valor + ((mpu.getGyroZ() - offset)*Durracion_de_la_muestra/1000);
+    } 
+ 
 
+    /*    
     static uint32_t prev_ms2 = millis();
             if (millis() > prev_ms2 + 5) {
                 valor = valor + mpu.getGyroZ() - offset;
                 prev_ms2 = millis();
         }
-
+          */
     static uint32_t prev_ms3 = millis();
             if (millis() > prev_ms3 + 200) {
                 Serial.println(valor);
+                Serial.println(Durracion_de_la_muestra);
                 prev_ms3 = millis();
         }
+
+ 
     
 }
 
 //void loop(){
+
   //Serial.print(mpu.getYaw());
   //delay(1000);
 
