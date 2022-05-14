@@ -9,9 +9,12 @@
 #define PinEnMotor 5
 #define PinDir1Motor 6
 #define PinDir2Motor 7
+#define interruptPin 2
 
 long encoder = 0;
 bool forward = true;
+int vuelta = 1;
+float valor = 0;
 
 class CServo{  //maneja el servo
 public:
@@ -109,6 +112,14 @@ CServo MiCServo(3);
 Motor MiMotor(5,6,7);
 MPU9250 mpu;
 
+int ErrorDireccion(int bearing, int target){
+  int error = bearing - target;
+  if (error == 0) return 0;
+  if (error > 180) error -= 360;
+  if (error < -180) error += 360;
+  return -1*error;
+}
+
 float x0 = mpu.getMagX();
 float y0 = mpu.getMagY();
 float TotAngle;
@@ -125,7 +136,10 @@ void Calibrar(){
 float offset;
 
 void setup() {
+  encoder = 0;
   MiCServo.Setup();
+  pinMode(interruptPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), encoderISR, CHANGE);
   Serial.begin(115200);
   
   //Calibrar();
@@ -156,9 +170,10 @@ void setup() {
   }
   offset = tot/num;
   Serial.println(offset);
-  MiMotor.potencia(200);
+  MiCServo.MoverServo(ErrorDireccion(valor,0));
   delay(100);
-  MiMotor.potencia(140);
+  MiMotor.potencia(170);
+  
 }
 
 void print_yaw_gyroz() {
@@ -169,16 +184,10 @@ void print_yaw_gyroz() {
 }
 
 
-int ErrorDireccion(int bearing, int target){
-  int error = bearing - target;
-  if (error == 0) return 0;
-  if (error > 180) error -= 360;
-  if (error < -180) error += 360;
-  return -1*error;
-}
 
 
-float valor = 0;
+
+
 uint32_t Duracion_de_la_muestra = 0;
 
 
@@ -188,23 +197,28 @@ void loop() {
         Duracion_de_la_muestra = millis() - prev_ms;
         prev_ms = millis();
         valor = valor + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-    } 
-    //MiMotor.potencia(180);
-    MiCServo.MoverServo(ErrorDireccion(valor,0));
-    if(encoder >= 10000){
+    }
 
-      MiMotor.potencia(0);
+    if(encoder > 1500){
 
-    }/*else{
-      MiMotor.potencia(180);
-    }*/
-    
+      MiCServo.MoverServo(ErrorDireccion(valor,-90*vuelta));
+      if(abs(ErrorDireccion(valor,-90*vuelta))<5){
+        vuelta ++;
+        encoder = 0;
+      }
+
+    }
+
+    Serial.println(encoder);
+    Serial.println(vuelta);
+    Serial.println(valor);
+  
  
          
     static uint32_t prev_ms3 = millis();
             if (millis() > prev_ms3 + 200) {
-                Serial.println(valor);
-                Serial.println(Duracion_de_la_muestra);
+               //Serial.println(valor);
+               //Serial.println(Duracion_de_la_muestra);
                 prev_ms3 = millis();
         }
 
@@ -215,12 +229,9 @@ void loop() {
 
 /*
 void loop(){
-
   Serial.print(mpu.getYaw());
   delay(1000);
-
 }
-
 void loop() {
  if (mpu.update()) {
     float temp = mpu.getAccX();
@@ -241,5 +252,4 @@ void loop() {
    delay(1000);
   }
 }
-
 */
