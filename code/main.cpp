@@ -10,6 +10,10 @@
 #define PinDir1Motor 6
 #define PinDir2Motor 7
 
+long encoder = 0;
+int time = 1000;
+bool forward = true;
+
 class CServo{  //maneja el servo
 public:
   CServo(byte PinServo);
