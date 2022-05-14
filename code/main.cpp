@@ -11,7 +11,6 @@
 #define PinDir2Motor 7
 
 long encoder = 0;
-int time = 1000;
 bool forward = true;
 
 class CServo{  //maneja el servo
@@ -59,6 +58,19 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){
   pinMode(PinDir2, OUTPUT);
   // falta algo?
 }
+
+void encoderISR() {
+  if (forward == true) 
+  {
+    encoder ++;
+  }
+  else
+  {
+    encoder --;
+  }
+  
+}
+
 
 void Motor::potencia(int pot){
   // (PinDir1Motor,LOW) ; (PinDir2Motor,HIGH) -> Hacia atrás
