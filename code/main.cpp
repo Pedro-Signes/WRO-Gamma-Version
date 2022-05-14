@@ -156,6 +156,9 @@ void setup() {
   }
   offset = tot/num;
   Serial.println(offset);
+  MiMotor.potencia(200);
+  delay(100);
+  MiMotor.potencia(140);
 }
 
 void print_yaw_gyroz() {
@@ -176,31 +179,32 @@ int ErrorDireccion(int bearing, int target){
 
 
 float valor = 0;
-uint32_t Durracion_de_la_muestra = 0;
+uint32_t Duracion_de_la_muestra = 0;
 
 
 void loop() {
   static uint32_t prev_ms = millis();
     if (mpu.update()) {
-        Durracion_de_la_muestra = millis() - prev_ms;
+        Duracion_de_la_muestra = millis() - prev_ms;
         prev_ms = millis();
-        valor = valor + ((mpu.getGyroZ() - offset)*Durracion_de_la_muestra/1000);
+        valor = valor + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
     } 
-  
+    //MiMotor.potencia(180);
+    MiCServo.MoverServo(ErrorDireccion(valor,0));
+    if(encoder >= 10000){
 
+      MiMotor.potencia(0);
 
-    /*    
-    static uint32_t prev_ms2 = millis();
-            if (millis() > prev_ms2 + 5) {
-                valor = valor + mpu.getGyroZ() - offset;
-                prev_ms2 = millis();
-        }
-          */
+    }/*else{
+      MiMotor.potencia(180);
+    }*/
+    
+ 
          
     static uint32_t prev_ms3 = millis();
             if (millis() > prev_ms3 + 200) {
                 Serial.println(valor);
-                Serial.println(Durracion_de_la_muestra);
+                Serial.println(Duracion_de_la_muestra);
                 prev_ms3 = millis();
         }
 
@@ -208,30 +212,34 @@ void loop() {
     
 }
 
-//void loop(){
 
-  //Serial.print(mpu.getYaw());
-  //delay(1000);
+/*
+void loop(){
 
-//}
+  Serial.print(mpu.getYaw());
+  delay(1000);
 
-//void loop() {
-// if (mpu.update()) {
-  //  float temp = mpu.getAccX();
-  //  Serial.print("AccX: ");
-   // Serial.print(mpu.getAccX(),2);
-    //Serial.println(temp);
-    //float xVector = mpu.getMagX();
-    //float yVector = mpu.getMagY();
-    //Serial.print("xVector: ");
-    //Serial.print(mpu.getMagX(),2);
-    //Serial.println(xVector);
-    //float XiVector = increaseX(xVector, x0);
-    //float YiVector = increaseX(yVector, y0);
-    //float ang = angle(XiVector, YiVector);
-    //TotAngle = TotAngle + ang;
-    //Serial.print(ang);
-    //Serial.println(TotAngle);
-    //delay(1000);
-  //}
-//}
+}
+
+void loop() {
+ if (mpu.update()) {
+    float temp = mpu.getAccX();
+    Serial.print("AccX: ");
+    Serial.print(mpu.getAccX(),2);
+    Serial.println(temp);
+    float xVector = mpu.getMagX();
+    float yVector = mpu.getMagY();
+    Serial.print("xVector: ");
+    Serial.print(mpu.getMagX(),2);
+    Serial.println(xVector);
+    float XiVector = increaseX(xVector, x0);
+    float YiVector = increaseX(yVector, y0);
+    float ang = angle(XiVector, YiVector);
+    TotAngle = TotAngle + ang;
+    Serial.print(ang);
+    Serial.println(TotAngle);
+   delay(1000);
+  }
+}
+
+*/
