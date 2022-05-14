@@ -149,6 +149,16 @@ void print_yaw_gyroz() {
     Serial.println(mpu.getGyroZ(), 2);
 }
 
+
+int ErrorDireccion(int bearing, int target){
+  int error = bearing - target;
+  if (error == 0) return 0;
+  if (error > 180) error -= 360;
+  if (error < -180) error += 360;
+  return -1*error;
+}
+
+
 float valor = 0;
 uint32_t Durracion_de_la_muestra = 0;
 
@@ -160,7 +170,8 @@ void loop() {
         prev_ms = millis();
         valor = valor + ((mpu.getGyroZ() - offset)*Durracion_de_la_muestra/1000);
     } 
- 
+  
+
 
     /*    
     static uint32_t prev_ms2 = millis();
@@ -169,6 +180,7 @@ void loop() {
                 prev_ms2 = millis();
         }
           */
+         
     static uint32_t prev_ms3 = millis();
             if (millis() > prev_ms3 + 200) {
                 Serial.println(valor);
