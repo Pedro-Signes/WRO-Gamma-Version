@@ -92,22 +92,6 @@ void Motor::potencia(int pot){
  
 }
 
-float increaseX(float x0, float x){
-  float iX = x - x0;
-  return iX;
-}
-
-float increaseY(float y0, float y){
-  float iY = y - y0;
-  return iY;
-}
-
-float angle(float x, float y){
-  float result;
-  result = atan2(y,x);
-  return result;
-}
-
 CServo MiCServo(3);
 Motor MiMotor(5,6,7);
 MPU9250 mpu;
@@ -119,10 +103,6 @@ int ErrorDireccion(int bearing, int target){
   if (error < -180) error += 360;
   return -1*error;
 }
-
-float x0 = mpu.getMagX();
-float y0 = mpu.getMagY();
-float TotAngle;
 
 void Calibrar(){
   mpu.verbose(true);
@@ -231,25 +211,5 @@ void loop() {
 void loop(){
   Serial.print(mpu.getYaw());
   delay(1000);
-}
-void loop() {
- if (mpu.update()) {
-    float temp = mpu.getAccX();
-    Serial.print("AccX: ");
-    Serial.print(mpu.getAccX(),2);
-    Serial.println(temp);
-    float xVector = mpu.getMagX();
-    float yVector = mpu.getMagY();
-    Serial.print("xVector: ");
-    Serial.print(mpu.getMagX(),2);
-    Serial.println(xVector);
-    float XiVector = increaseX(xVector, x0);
-    float YiVector = increaseX(yVector, y0);
-    float ang = angle(XiVector, YiVector);
-    TotAngle = TotAngle + ang;
-    Serial.print(ang);
-    Serial.println(TotAngle);
-   delay(1000);
-  }
 }
 */
