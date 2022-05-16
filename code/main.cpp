@@ -15,6 +15,7 @@ long encoder = 0;
 bool forward = true;
 int vuelta = 1;
 float valor = 0;
+float offset;
 
 class CServo{  //maneja el servo
 public:
@@ -112,8 +113,6 @@ void Calibrar(){
   mpu.verbose(false);
   saveCalibration();
 }
-
-float offset;
 
 void setup() {
   encoder = 0;
