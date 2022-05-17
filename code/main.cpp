@@ -33,7 +33,6 @@ CServo::CServo(byte PinServo){
 
 void CServo::Setup(){
   Miservo.attach(_pinServo);
-  Miservo.write(40);
 }
 
 void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
