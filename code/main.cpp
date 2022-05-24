@@ -62,6 +62,15 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){
   // falta algo?
 }
 
+void arrancar {
+  Mimotor.potencia(200);
+  if ( encoder >= )
+  {
+    Mimotor.potencia(140);
+  }
+  
+}
+
 void encoderISR() {
   if (forward == true) 
   {
@@ -204,10 +213,3 @@ void loop() {
     
 }
 
-
-/*
-void loop(){
-  Serial.print(mpu.getYaw());
-  delay(1000);
-}
-*/
