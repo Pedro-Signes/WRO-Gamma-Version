@@ -52,26 +52,26 @@ class Motor{
 
 };
 
-Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){
+Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
   _pinEn = PinEn;
   _pinDir1 = PinDir1;
   _pinDir2 = PinDir2;
   pinMode(PinEn, OUTPUT);
   pinMode(PinDir1, OUTPUT);
   pinMode(PinDir2, OUTPUT);
-  // falta algo?
+
 }
 
-void arrancar {
-  Mimotor.potencia(200);
-  if ( encoder >= )
+void arrancar {  // función para arrancar el motor
+  MiMotor.potencia(200);
+  if ( encoder >= 200 )
   {
     Mimotor.potencia(140);
   }
   
 }
 
-void encoderISR() {
+void encoderISR() {  // función para que funcien el encoder
   if (forward == true) 
   {
     encoder ++;
@@ -113,8 +113,8 @@ int ErrorDireccion(int bearing, int target){
   return -1*error;
 }
 
-void Calibrar(){
-  mpu.verbose(true);
+void Calibrar(){ // función para calibrar ( revisar )
+  mpu.verbose(true);  
   delay(1000);
   mpu.calibrateMag();
   mpu.calibrateAccelGyro();
@@ -128,6 +128,7 @@ void setup() {
   pinMode(interruptPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(interruptPin), encoderISR, CHANGE);
   Serial.begin(115200);
+  arrancar;
   
   //Calibrar();
 
@@ -163,7 +164,7 @@ void setup() {
   
 }
 
-void print_yaw_gyroz() {
+void print_yaw_gyroz() {  // función que muestra el eje z en el gyro
     Serial.print("Yaw, GyroZ: ");
     Serial.print(mpu.getYaw(), 2);
     Serial.print(", ");
