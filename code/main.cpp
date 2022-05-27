@@ -10,12 +10,16 @@
 #define PinDir1Motor 6
 #define PinDir2Motor 7
 #define interruptPin 2
+#define kp 3
 
 long encoder = 0;
 bool forward = true;
 int vuelta = 1;
 float valor = 0;
 float offset;
+float velocidad;
+long prev_tiempo = 0;
+int incremento_Tiempo = 0;
 
 class CServo{  //maneja el servo
 public:
@@ -44,11 +48,14 @@ class Motor{
   public:
   Motor(byte PinEn,byte PinDir1,byte PinDir2);
   void potencia(int pot);
+  void errorPotencia(float bearing, float target);
+  int GetPotencia();
 
   private:
   byte _pinEn;
   byte _pinDir1;
   byte _pinDir2;
+  float _potencia = 0;
 
 };
 
@@ -62,11 +69,11 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
 
 }
 
-void arrancar {  // función para arrancar el motor
+void arrancar() {  // función para arrancar el motor
   MiMotor.potencia(200);
   if ( encoder >= 200 )
   {
-    Mimotor.potencia(140);
+    MiMotor.potencia(140);
   }
   
 }
@@ -99,6 +106,14 @@ void Motor::potencia(int pot){
     analogWrite(PinEnMotor, -1*pot);
   }
  
+}
+
+void Motor::errorPotencia(float velocidad, float target){
+  float error = target - velocidad;
+  _potencia = _potencia + error*kp;
+  if (_potencia <0) _potencia = 0;
+  if (_potencia > 255) _potencia = 255;
+  potencia((int)_potencia);
 }
 
 CServo MiCServo(3);
@@ -218,20 +233,16 @@ void loop() {
 /*
 const int Trigger = 2;   //Pin digital 2 para el Trigger del sensor
 const int Echo = 3;   //Pin digital 3 para el Echo del sensor
-
 void setup() {
   Serial.begin(9600);//iniciailzamos la comunicación
   pinMode(Trigger, OUTPUT); //pin como salida
   pinMode(Echo, INPUT);  //pin como entrada
   digitalWrite(Trigger, LOW);//Inicializamos el pin con 0
 }
-
 void loop()
 {
-
   long t; //timepo que demora en llegar el eco
   long d; //distancia en centimetros
-
   digitalWrite(Trigger, HIGH);
   delayMicroseconds(10);          //Enviamos un pulso de 10us
   digitalWrite(Trigger, LOW);
