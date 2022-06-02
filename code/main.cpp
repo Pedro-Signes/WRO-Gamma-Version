@@ -4,6 +4,7 @@
 #include "eeprom_utils.h"
 #include <Pixy2.h>
 #include <Adafruit_NeoPixel.h>
+#include <Ultrasonic.h>
 
 #define servoMAX 67
 #define servoMIN 13
@@ -11,8 +12,10 @@
 #define PinEnMotor 5
 #define PinDir1Motor 6
 #define PinDir2Motor 7
-#define interruptPin 2
+#define PinEncoder 2
 #define PinLED 11
+#define PinTriggerI 8
+#define PinEchoI 9
 #define kp 3
 
 long encoder = 0;
@@ -23,6 +26,7 @@ float offset;
 float velocidad;
 long prev_tiempo = 0;
 int incremento_Tiempo = 0;
+float face = 0;
 
 class CServo{  //maneja el servo
 public:
@@ -73,14 +77,6 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
 
 }
 
-void Motor::arrancar() {  // función para arrancar el motor
-  potencia(200);
-  if ( encoder >= 200 )
-  {
-    potencia(140);
-  }
-  
-}
 
 void encoderISR() {  // función para que funcien el encoder
   if (forward == true) 
@@ -120,13 +116,22 @@ void Motor::errorPotencia(float velocidad, float target){
   potencia((int)_potencia);
 }
 
+void Motor::arrancar() {  // función para arrancar el motor
+  potencia(200);
+  if ( encoder >= 200 )
+  {
+    potencia(140);
+  }
+  
+}
+
 class Ultrasonido{
   public:
   Ultrasonido(byte Trigger, byte Echo);
   long getDistancia();
 
   private:
-  long distancia = 0;
+  long _distancia = 0;
   byte _Trigger;
   byte _Echo;
 };
@@ -138,10 +143,24 @@ Ultrasonido::Ultrasonido(byte Trigger, byte Echo){
   pinMode(Echo, INPUT);  //pin como entrada
 }
 
-CServo MiCServo(3);
-Motor MiMotor(5,6,7);
+long Ultrasonido::getDistancia(){
+  return _distancia;
+}
+
+
+
+CServo MiCServo(PinConServo);
+Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
 MPU9250 mpu;
 Pixy2 pixy;
+Ultrasonic UltrasonidoI(PinTriggerI, PinEchoI);
+
+void autoTurn(){
+  if (UltrasonidoI.read(CM)>60){
+    MiCServo.MoverServo(90);
+    face = face +90;
+  };
+};
 
 int ErrorDireccion(int bearing, int target){
   int error = bearing - target;
@@ -162,10 +181,9 @@ void Calibrar(){ // función para calibrar ( revisar )
 
 void setup() {
   MiCServo.Setup();
-  pinMode(interruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), encoderISR, CHANGE);
+  pinMode(PinEncoder, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
   Serial.begin(115200);
-  //arrancar;
   pixy.init();
 
   //Calibrar();
@@ -197,7 +215,7 @@ void setup() {
   Serial.println(offset);
   MiCServo.MoverServo(ErrorDireccion(valor,0));
   delay(100);
-  
+  MiMotor.arrancar();
   
 }
 
@@ -224,7 +242,6 @@ void loop()
   }  
 }*/
 
-/*
 void loop() {
   static uint32_t prev_ms = millis();
     if (mpu.update()) {
@@ -232,31 +249,30 @@ void loop() {
         prev_ms = millis();
         valor = valor + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
     }
-
-    if(encoder > 1500){
-
+    MiCServo.MoverServo(ErrorDireccion(valor,face));
+    /*if(encoder > 1500){
       MiCServo.MoverServo(ErrorDireccion(valor,-90*vuelta));
       if(abs(ErrorDireccion(valor,-90*vuelta))<5){
         vuelta ++;
         encoder = 0;
       }
-
     }*/
     /*
     Serial.println(encoder);
     Serial.println(vuelta);
     Serial.println(valor);
-    
+    */
  
          
     static uint32_t prev_ms3 = millis();
-            if (millis() > prev_ms3 + 200) {
+            if (millis() > prev_ms3 + 10) {
                //Serial.println(valor);
                //Serial.println(Duracion_de_la_muestra);
+               autoTurn();
                 prev_ms3 = millis();
-        }*/
+        }
     
-//}
+}
 
 //para probar con los sensores de ultrasonido
 /*
