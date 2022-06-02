@@ -2,6 +2,8 @@
 #include <Servo.h>
 #include "MPU9250.h"
 #include "eeprom_utils.h"
+#include <Pixy2.h>
+#include <Adafruit_NeoPixel.h>
 
 #define servoMAX 67
 #define servoMIN 13
@@ -10,6 +12,7 @@
 #define PinDir1Motor 6
 #define PinDir2Motor 7
 #define interruptPin 2
+#define PinLED 11
 #define kp 3
 
 long encoder = 0;
@@ -50,6 +53,7 @@ class Motor{
   void potencia(int pot);
   void errorPotencia(float bearing, float target);
   int GetPotencia();
+  void arrancar();
 
   private:
   byte _pinEn;
@@ -69,11 +73,11 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
 
 }
 
-void arrancar() {  // función para arrancar el motor
-  MiMotor.potencia(200);
+void Motor::arrancar() {  // función para arrancar el motor
+  potencia(200);
   if ( encoder >= 200 )
   {
-    MiMotor.potencia(140);
+    potencia(140);
   }
   
 }
@@ -116,9 +120,28 @@ void Motor::errorPotencia(float velocidad, float target){
   potencia((int)_potencia);
 }
 
+class Ultrasonido{
+  public:
+  Ultrasonido(byte Trigger, byte Echo);
+  long getDistancia();
+
+  private:
+  long distancia = 0;
+  byte _Trigger;
+  byte _Echo;
+};
+
+Ultrasonido::Ultrasonido(byte Trigger, byte Echo){
+  _Trigger = Trigger;
+  _Echo = Echo;
+  pinMode(Trigger, OUTPUT); //pin como salida
+  pinMode(Echo, INPUT);  //pin como entrada
+}
+
 CServo MiCServo(3);
 Motor MiMotor(5,6,7);
 MPU9250 mpu;
+Pixy2 pixy;
 
 int ErrorDireccion(int bearing, int target){
   int error = bearing - target;
@@ -138,13 +161,13 @@ void Calibrar(){ // función para calibrar ( revisar )
 }
 
 void setup() {
-  encoder = 0;
   MiCServo.Setup();
   pinMode(interruptPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(interruptPin), encoderISR, CHANGE);
   Serial.begin(115200);
-  arrancar;
-  
+  //arrancar;
+  pixy.init();
+
   //Calibrar();
 
 
@@ -160,7 +183,6 @@ void setup() {
   loadCalibration();
 
   Serial.println("Programa no explota");
-  MiCServo.MoverServo(20);
 
   int num =0;
   float tot =0;
@@ -175,25 +197,34 @@ void setup() {
   Serial.println(offset);
   MiCServo.MoverServo(ErrorDireccion(valor,0));
   delay(100);
-  MiMotor.potencia(170);
+  
   
 }
-
-void print_yaw_gyroz() {  // función que muestra el eje z en el gyro
-    Serial.print("Yaw, GyroZ: ");
-    Serial.print(mpu.getYaw(), 2);
-    Serial.print(", ");
-    Serial.println(mpu.getGyroZ(), 2);
-}
-
-
-
 
 
 
 uint32_t Duracion_de_la_muestra = 0;
+/*
+void loop()
+{ 
+  int i; 
+  pixy.ccc.getBlocks();
+  
+  if (pixy.ccc.numBlocks)
+  {
+    Serial.print("Detected ");
+    Serial.println(pixy.ccc.numBlocks);
+    for (i=0; i<pixy.ccc.numBlocks; i++)
+    {
+      Serial.print("  block ");
+      Serial.print(i);
+      Serial.print(": ");
+      pixy.ccc.blocks[i].print();
+    }
+  }  
+}*/
 
-
+/*
 void loop() {
   static uint32_t prev_ms = millis();
     if (mpu.update()) {
@@ -210,12 +241,12 @@ void loop() {
         encoder = 0;
       }
 
-    }
-
+    }*/
+    /*
     Serial.println(encoder);
     Serial.println(vuelta);
     Serial.println(valor);
-  
+    
  
          
     static uint32_t prev_ms3 = millis();
@@ -223,11 +254,9 @@ void loop() {
                //Serial.println(valor);
                //Serial.println(Duracion_de_la_muestra);
                 prev_ms3 = millis();
-        }
-
- 
+        }*/
     
-}
+//}
 
 //para probar con los sensores de ultrasonido
 /*
