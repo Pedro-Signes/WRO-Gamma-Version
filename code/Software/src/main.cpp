@@ -13,9 +13,11 @@
 #define PinDir1Motor 6
 #define PinDir2Motor 7
 #define PinEncoder 2
-#define PinLED 11
+#define PinLED 12
 #define PinTriggerI 8
 #define PinEchoI 9
+#define PinTriggerII 10
+#define PinEchoII 11
 #define kp 3
 
 long encoder = 0;
@@ -154,12 +156,17 @@ Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
 MPU9250 mpu;
 Pixy2 pixy;
 Ultrasonic UltrasonidoI(PinTriggerI, PinEchoI);
+Ultrasonic UltrasonidoII(PinTriggerII,PinEchoII);
 
 void autoTurn(){
   if (UltrasonidoI.read(CM)>60){
     MiCServo.MoverServo(90);
     face = face +90;
   };
+  if (UltrasonidoII.read(CM)>60){
+    MiCServo.MoverServo(-90);
+    face = face -90;
+  }
 };
 
 int ErrorDireccion(int bearing, int target){
@@ -180,9 +187,9 @@ void Calibrar(){ // función para calibrar ( revisar )
 }
 
 void setup() {
-  MiCServo.Setup();
-  pinMode(PinEncoder, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+  MiCServo.Setup();                                                         //incluido 
+  pinMode(PinEncoder, INPUT);                                               //incluido
+  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);   //incluido
   Serial.begin(115200);
   pixy.init();
 
@@ -213,7 +220,7 @@ void setup() {
   }
   offset = tot/num;
   Serial.println(offset);
-  MiCServo.MoverServo(ErrorDireccion(valor,0));
+  MiCServo.MoverServo(ErrorDireccion(valor,0)); //incluido
   delay(100);
   MiMotor.arrancar();
   
@@ -262,7 +269,7 @@ void loop() {
     Serial.println(vuelta);
     Serial.println(valor);
     */
- 
+
          
     static uint32_t prev_ms3 = millis();
             if (millis() > prev_ms3 + 10) {
