@@ -4,9 +4,11 @@
 #define servoMIN 13
 
 #define PinConServo 9
-#define PinEnMotor 11
+#define PinEnMotor 5
 #define PinDir1Motor 15
 #define PinDir2Motor 16
+#define kp 0.3
+#define kd 3
 
 bool forward = true;
 
@@ -37,8 +39,8 @@ class Motor{
   public:
   Motor(byte PinEn,byte PinDir1,byte PinDir2);
   void potencia(int pot);
-  void errorPotencia(float bearing, float target);
-  int GetPotencia();
+  void corregirVelocidad(int velocidadActual, int velocidadTarget);
+  float GetPotencia();
   void arrancar();
 
   private:
@@ -46,8 +48,13 @@ class Motor{
   byte _pinDir1;
   byte _pinDir2;
   float _potencia = 0;
-
+  float _error;
+  float _errorAnterior;
 };
+
+float Motor::GetPotencia(){
+  return _potencia;
+}
 
 Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
   _pinEn = PinEn;
@@ -69,8 +76,6 @@ void Motor::potencia(int pot){
     digitalWrite(PinDir1Motor,HIGH);
     digitalWrite(PinDir2Motor,LOW);
     analogWrite(PinEnMotor, pot);
-    Serial.print("Motor configurado");
-    Serial.println(pot);
   }
   else{
     digitalWrite(PinDir1Motor,LOW);
@@ -79,11 +84,10 @@ void Motor::potencia(int pot){
   }
  
 }
-/*
-void Motor::errorPotencia(float velocidad, float target){
-  float error = target - velocidad;
-  _potencia = _potencia + error*kp;
-  if (_potencia <0) _potencia = 0;
-  if (_potencia > 255) _potencia = 255;
-  potencia((int)_potencia);
-}*/
+
+void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
+  _error = velocidadTarget - velocidadActual;
+  _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, 0, 255);
+  _errorAnterior = _error;
+  potencia(int(_potencia));
+}

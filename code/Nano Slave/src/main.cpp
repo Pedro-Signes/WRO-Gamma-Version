@@ -9,7 +9,7 @@
 #define PinEchoI 8
 #define PinTriggerD 7
 #define PinEchoD 6
-#define PinTriggerC 5
+#define PinTriggerC 11
 #define PinEchoC 4
 #define PinLed 12
 
@@ -17,6 +17,7 @@
 #define DELAYVAL 50
 
 volatile long encoder = 0;
+bool lecturaEncoder = false;
 int vuelta = 1;
 float valor = 0;
 float offset;
@@ -62,6 +63,7 @@ int ErrorDireccion(int bearing, int target){
   return -1*error;
 }
 
+
 void receiveEvent(int howMany);
 void requestEvent();
 
@@ -87,23 +89,26 @@ void setup() {
 
   MiCServo.MoverServo(ErrorDireccion(valor,0));
   delay(100);
-  /*Serial.println("Configurando interrupciones");
+  Serial.println("Configurando interrupciones");
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
   TCCR2B = 0;                 // Reset entire TCCR1B to 0
   TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024  
   TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
-  OCR2B = 127;                //Finally we set compare register B to this value 
-  sei(); */
+  OCR2B = 255;                //Finally we set compare register B to this value 
+  sei(); 
 
-  MiMotor.potencia(150);
   Serial.println("Todo funcionando");
   delay(2000);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.println(velocidad);
+  Serial.print(velocidad);
+  Serial.print(" ");
+  Serial.println(MiMotor.GetPotencia());
+  MiMotor.corregirVelocidad(velocidad, 20);
+  delay(16);
 }
 
 void receiveEvent(int howMany) {
@@ -114,7 +119,13 @@ void requestEvent() {
 
 }
 
-ISR(TIMER2_COMPB_vect){                               
-  velocidad = encoder;
-  encoder = 0;
+ISR(TIMER2_COMPB_vect){        
+  if (lecturaEncoder==true){                  
+    velocidad = encoder;
+    encoder = 0;
+    lecturaEncoder= false;
+  }
+  else{
+    lecturaEncoder=true;
+  }
 }
