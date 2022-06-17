@@ -23,6 +23,18 @@ float valor = 0;
 float offset;
 volatile float velocidad;
 float face = 0;
+byte datoEncoder[4];
+int distanceCentral;
+int distanceIzquierdo;
+int distanceDerecho;
+int velocidadObjetivo;
+uint32_t tiempo = 0;
+
+void receiveEvent(int howMany);
+void requestEvent();
+uint8_t requestedData = 0;
+
+uint8_t medidaArray[3];
 
 CServo MiCServo(PinConServo);
 Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
@@ -63,9 +75,9 @@ int ErrorDireccion(int bearing, int target){
   return -1*error;
 }
 
-
-void receiveEvent(int howMany);
-void requestEvent();
+Ultrasonic ultrasonicCentral(11,4);//central
+Ultrasonic ultrasonicIzquierdo(3,8);//izquierdo
+Ultrasonic ultrasonicDerecho(7,6);//derecho
 
 void setup() {
   MiCServo.Setup();
@@ -102,20 +114,52 @@ void setup() {
   delay(2000);
 }
 
+void LecturaUltrasonidos();
+
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.print(velocidad);
-  Serial.print(" ");
-  Serial.println(MiMotor.GetPotencia());
-  MiMotor.corregirVelocidad(velocidad, 20);
-  delay(16);
+  //Serial.print(velocidad);
+  //Serial.print(" ");
+  //Serial.println(MiMotor.GetPotencia());
+  //MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
+  if (millis() > tiempo){
+    LecturaUltrasonidos();
+    tiempo = millis() + 20;
+  }
 }
+  
 
 void receiveEvent(int howMany) {
 
+  while(howMany > 0 ){
+    requestedData = Wire.read();
+    howMany--;
+    if (requestedData == 3){
+      velocidadObjetivo = Wire.read();
+    }else if(requestedData == 4){
+      MiCServo.MoverServo(Wire.read());
+    }
+
+  }
 }
 
 void requestEvent() {
+
+  if (requestedData == 1) {
+    datoEncoder[0]=encoder & 0xff;
+    datoEncoder[1]=(encoder>>8) & 0xff;
+    datoEncoder[2]=(encoder>>16) & 0xff;
+    datoEncoder[3]=(encoder>>24) & 0xff;
+    Wire.write(datoEncoder,4);
+  }
+  else if (requestedData == 2){
+    distanceCentral=ultrasonicCentral.read();
+    distanceIzquierdo=ultrasonicIzquierdo.read();
+    distanceIzquierdo=ultrasonicDerecho.read();
+    Wire.write(distanceCentral);
+    Wire.write(distanceIzquierdo);
+    Wire.write(distanceDerecho);
+  }
 
 }
 
@@ -128,4 +172,10 @@ ISR(TIMER2_COMPB_vect){
   else{
     lecturaEncoder=true;
   }
+}
+
+void LecturaUltrasonidos(){
+  distanceCentral=ultrasonicCentral.read();
+  distanceIzquierdo=ultrasonicIzquierdo.read();
+  distanceIzquierdo=ultrasonicDerecho.read();
 }
