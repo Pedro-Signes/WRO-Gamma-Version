@@ -28,6 +28,7 @@ int distanceCentral;
 int distanceIzquierdo;
 int distanceDerecho;
 int velocidadObjetivo;
+int encodertotal = 0;
 uint32_t tiempo = 0;
 
 void receiveEvent(int howMany);
@@ -166,6 +167,7 @@ void requestEvent() {
 ISR(TIMER2_COMPB_vect){        
   if (lecturaEncoder==true){                  
     velocidad = encoder;
+    encodertotal= encodertotal + encoder;
     encoder = 0;
     lecturaEncoder= false;
   }
