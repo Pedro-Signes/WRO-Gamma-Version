@@ -2,21 +2,21 @@
 #include <Wire.h>
 #include <MPU9250.h>
 
-float valor = 0;
+float valorBrujula = 0;
 float offset;
 uint32_t Duracion_de_la_muestra = 0;
 
 long solicitudEncoder();
 byte medidaUltrasonidos[3];
 
-void Calibrar(){ // función para calibrar ( revisar )
+/*void Calibrar(){ // función para calibrar ( revisar )
   mpu.verbose(true);  
   delay(1000);
   mpu.calibrateMag();
   mpu.calibrateAccelGyro();
   mpu.verbose(false);
   saveCalibration();
-}
+}*/
 
 void setup() {
   Wire.begin();
@@ -57,7 +57,7 @@ void loop() {
     if (mpu.update()) {
         Duracion_de_la_muestra = millis() - prev_ms;
         prev_ms = millis();
-        valor = valor + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
+        valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
     }
 } 
 
