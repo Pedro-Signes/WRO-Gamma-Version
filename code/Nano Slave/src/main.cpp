@@ -118,9 +118,13 @@ void setup() {
   Serial.println("Todo funcionando");
   delay(2000);
 
+<<<<<<< HEAD
   MiMotor.potencia(50);
   delay(500);
   MiMotor.potencia(0);
+=======
+  MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
+>>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
 
 }
 
@@ -149,12 +153,17 @@ void receiveEvent(int howMany) {
       Serial.println("velicidad recibida");
     }else if(requestedData == 4){
       MiCServo.MoverServo(Wire.read());
+<<<<<<< HEAD
       Serial.println("angulo recibido");
     }else if(requestedData == 5){
       int valor_enable = Wire.read();
       //digitalWrite(PinEnable,valor_enable);
       Serial.print("enable recibida: ");
       Serial.println(valor_enable);
+=======
+    }else if(requestedData == 5){
+      digitalWrite(14,Wire.read());
+>>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
     }
 
   }
@@ -197,3 +206,4 @@ void LecturaUltrasonidos(){
   distanceIzquierdo=ultrasonicIzquierdo.read();
   distanceDerecho=ultrasonicDerecho.read();
 }
+
