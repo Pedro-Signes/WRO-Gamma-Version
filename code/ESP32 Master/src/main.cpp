@@ -46,6 +46,8 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
+  setVelocidad(40);
+
 }
 
 void loop() {
@@ -59,6 +61,15 @@ void loop() {
         prev_ms = millis();
         valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
     }
+
+  if(medidaEncoder >> 2000){
+    setGiro(90);
+  }else{
+    medirEncoder();
+    delay(100)
+  }
+
+  
 } 
 
 long medirEncoder() {
