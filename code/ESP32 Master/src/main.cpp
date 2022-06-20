@@ -32,18 +32,11 @@ long medirEncoder() {
   return medidaEncoder;
 }
 
-<<<<<<< HEAD
 void setEnable(int motrorEnable){
   Wire.beginTransmission(4);
   Wire.write(5);
   Wire.write(motrorEnable);
   Wire.endTransmission();
-=======
-void setEnable(bool motrorEnable){
-  Wire.beginTransmission(4);
-  Wire.write(5);
-  Wire.write(motrorEnable);
->>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
 }
 
 void setGiro(int angulo){
@@ -81,18 +74,12 @@ void setup() {
 
   //Calibrar();
 
-<<<<<<< HEAD
   for(int i = 0; i<20 ; i++){
     digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
     delay(100);
   }
 
   while(!mpu.setup(0x68)) {  // change to your own address
-=======
-
-  if (!mpu.setup(0x68)) {  // change to your own address
-    while (1) {
->>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
       Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
       delay(1000);
       digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
@@ -113,7 +100,6 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
-<<<<<<< HEAD
   setEnable(1);
 
   while(true){
@@ -127,13 +113,6 @@ void setup() {
 
   }
 
-=======
-  setEnable(true);
-
-  setVelocidad(40);
-  delay(2000);
-  setVelocidad(0);
->>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
 
 }
 
@@ -157,11 +136,4 @@ void loop() {
   }*/
 
   
-<<<<<<< HEAD
-} 
-
-
-
-=======
 }
->>>>>>> 3a460a2bce391bc5f27403ae327cad12dfaa2cb5
