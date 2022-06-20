@@ -5,9 +5,10 @@
 float valorBrujula = 0;
 float offset;
 uint32_t Duracion_de_la_muestra = 0;
+MPU9250 mpu;
 
 long solicitudEncoder();
-byte medidaUltrasonidos[3];
+byte medidasUltrasonidos[3]; // el primero es el central, el segundo el izquierdo, y el ultimo es el derecho
 
 /*void Calibrar(){ // función para calibrar ( revisar )
   mpu.verbose(true);  
@@ -18,11 +19,59 @@ byte medidaUltrasonidos[3];
   saveCalibration();
 }*/
 
+long medirEncoder() {
+  Wire.beginTransmission(4);
+  Wire.write(1);
+  Wire.endTransmission();
+  Wire.requestFrom(4,4);
+  long medidaEncoder;
+  medidaEncoder = Wire.read();
+  medidaEncoder = medidaEncoder | Wire.read()<<8;
+  medidaEncoder = medidaEncoder | Wire.read()<<16;
+  medidaEncoder = medidaEncoder | Wire.read()<<24;
+  return medidaEncoder;
+}
+
+void setEnable(bool motrorEnable){
+  Wire.beginTransmission(4);
+  Wire.write(5);
+  Wire.write(motrorEnable);
+}
+
+void setGiro(int angulo){
+  Wire.beginTransmission(4);
+  Wire.write(4);
+  Wire.write(angulo);
+  Wire.endTransmission();
+}
+
+void setVelocidad(byte velocidad){
+  Wire.beginTransmission(4);
+  Wire.write(3);
+  Wire.write(velocidad);
+  Wire.endTransmission();
+}
+
+void medirUltrasonidos(){
+  Wire.beginTransmission(4);
+  Wire.write(2);
+  Wire.endTransmission();
+  Wire.requestFrom(4,3);
+  byte iteracion = 0;
+  while (Wire.available()){
+    medidasUltrasonidos[iteracion] = Wire.read();
+    iteracion++;
+  }
+}
+
+
+
 void setup() {
   Wire.begin();
   Serial.begin(115200);
 
   //Calibrar();
+
 
   if (!mpu.setup(0x68)) {  // change to your own address
     while (1) {
@@ -31,7 +80,7 @@ void setup() {
       }
     }
 
-  loadCalibration();
+  //loadCalibration();
 
 
   int num =0;
@@ -46,7 +95,11 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
+  setEnable(true);
+
   setVelocidad(40);
+  delay(2000);
+  setVelocidad(0);
 
 }
 
@@ -62,51 +115,12 @@ void loop() {
         valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
     }
 
-  if(medidaEncoder >> 2000){
+ /* if(medidasUltrasonidos[0,1,0] >= 255){
     setGiro(90);
   }else{
-    medirEncoder();
-    delay(100)
-  }
+    medirUltrasonidos();
+    delay(100);
+  }*/
 
   
-} 
-
-long medirEncoder() {
-  Wire.beginTransmission(4);
-  Wire.write(1);
-  Wire.endTransmission();
-  Wire.requestFrom(4,4);
-  long medidaEncoder;
-  medidaEncoder = Wire.read();
-  medidaEncoder = medidaEncoder | Wire.read()<<8;
-  medidaEncoder = medidaEncoder | Wire.read()<<16;
-  medidaEncoder = medidaEncoder | Wire.read()<<24;
-  return medidaEncoder;
-}
-
-void medirUltrasonidos(){
-  Wire.beginTransmission(4);
-  Wire.write(2);
-  Wire.endTransmission();
-  Wire.requestFrom(4,3);
-  byte iteracion = 0;
-  while (Wire.available()){
-    medidaUltrasonidos[iteracion] = Wire.read();
-    iteracion++;
-  }
-}
-
-void setVelocidad(byte velocidad){
-  Wire.beginTransmission(4);
-  Wire.write(3);
-  Wire.write(velocidad);
-  Wire.endTransmission();
-}
-
-void setGiro(int angulo){
-  Wire.beginTransmission(4);
-  Wire.write(4);
-  Wire.write(angulo);
-  Wire.endTransmission();
 }
