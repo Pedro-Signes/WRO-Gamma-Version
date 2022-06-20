@@ -19,16 +19,18 @@ byte medidasUltrasonidos[3]; // el primero es el central, el segundo el izquierd
   saveCalibration();
 }*/
 
+
 long medirEncoder() {
   Wire.beginTransmission(4);
   Wire.write(1);
   Wire.endTransmission();
   Wire.requestFrom(4,4);
   long medidaEncoder;
-  medidaEncoder = Wire.read();
-  medidaEncoder = medidaEncoder | Wire.read()<<8;
-  medidaEncoder = medidaEncoder | Wire.read()<<16;
-  medidaEncoder = medidaEncoder | Wire.read()<<24;
+  byte iteracion = 0;
+  while( iteracion < 4){
+    medidaEncoder = medidaEncoder | Wire.read()<<(8*iteracion);
+    iteracion++;
+  }
   return medidaEncoder;
 }
 
@@ -70,7 +72,11 @@ void medirUltrasonidos(){
 void setup() {
   pinMode(LED_BUILTIN,OUTPUT);
   Wire.begin();
+  uint32_t freq = 400000;
+  Wire1.begin(15,4,freq);
   Serial.begin(115200);
+  delay(100);
+  setEnable(1);
 
   //Calibrar();
 
@@ -78,8 +84,16 @@ void setup() {
     digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
     delay(100);
   }
-
-  while(!mpu.setup(0x68)) {  // change to your own address
+  MPU9250Setting setting;
+    setting.accel_fs_sel = ACCEL_FS_SEL::A16G;
+    setting.gyro_fs_sel = GYRO_FS_SEL::G2000DPS;
+    setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS;
+    setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_200HZ;
+    setting.gyro_fchoice = 0x03;
+    setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_41HZ;
+    setting.accel_fchoice = 0x01;
+    setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
+  while(!mpu.setup(0x68,setting,Wire1)) {  // change to your own address
       Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
       delay(1000);
       digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
@@ -100,40 +114,29 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
-  setEnable(1);
-
-  while(true){
-
-    setVelocidad(30);
-    delay(1000);
-    setVelocidad(0);
-    delay(1000);
-
-
-
-  }
+  setVelocidad(20);
 
 
 }
 
 void loop() {
-  long data = medirEncoder();
-  Serial.println(data);
-  delay(100);
   
   static uint32_t prev_ms = millis();
-    if (mpu.update()) {
-        Duracion_de_la_muestra = millis() - prev_ms;
-        prev_ms = millis();
-        valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-    }
+  if (mpu.update()) {
+      Duracion_de_la_muestra = millis() - prev_ms;
+      prev_ms = millis();
+      valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
+  }
+    
+  static uint32_t prev_ms2 = millis();
+  if (millis()> prev_ms2) {
+      prev_ms2 = millis() + 20;
+      medirUltrasonidos();
+  }
 
- /* if(medidasUltrasonidos[0,1,0] >= 255){
-    setGiro(90);
-  }else{
-    medirUltrasonidos();
-    delay(100);
-  }*/
+  if(medidasUltrasonidos[1] > 100){
+    setVelocidad(0);
+  }
 
   
 }
