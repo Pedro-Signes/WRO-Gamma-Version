@@ -5,8 +5,8 @@
 
 #define PinConServo 9
 #define PinEnMotor 5
-#define PinDir1Motor 16
-#define PinDir2Motor 17
+#define PinDir1Motor 15
+#define PinDir2Motor 16
 #define kp 0.3
 #define kd 3
 
@@ -88,6 +88,10 @@ void Motor::potencia(int pot){
 void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   _error = velocidadTarget - velocidadActual;
   _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, 0, 255);
-  _errorAnterior = _error;
-  potencia(int(_potencia));
+  _errorAnterior = _error; 
+  if(_error = -velocidadActual){
+    potencia(0);
+  }else{
+    potencia(int(_potencia));
+  }
 }
