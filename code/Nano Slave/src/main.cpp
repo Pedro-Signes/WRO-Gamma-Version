@@ -12,6 +12,8 @@
 #define PinTriggerC 11
 #define PinEchoC 4
 #define PinLed 12
+#define PinEnable 14
+
 
 #define NUMPIXELS 8
 #define DELAYVAL 50
@@ -81,6 +83,8 @@ Ultrasonic ultrasonicIzquierdo(3,8);//izquierdo
 Ultrasonic ultrasonicDerecho(7,6);//derecho
 
 void setup() {
+  pinMode(PinEnable,OUTPUT);
+  digitalWrite(PinEnable,1);
   MiCServo.Setup();
   pinMode(PinEncoder, INPUT);
   attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
@@ -113,6 +117,11 @@ void setup() {
 
   Serial.println("Todo funcionando");
   delay(2000);
+
+  MiMotor.potencia(50);
+  delay(500);
+  MiMotor.potencia(0);
+
 }
 
 void LecturaUltrasonidos();
@@ -122,11 +131,11 @@ void loop() {
   //Serial.print(velocidad);
   //Serial.print(" ");
   //Serial.println(MiMotor.GetPotencia());
-  //MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
   if (millis() > tiempo){
     LecturaUltrasonidos();
     tiempo = millis() + 20;
   }
+  MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
 }
   
 
@@ -137,8 +146,15 @@ void receiveEvent(int howMany) {
     howMany--;
     if (requestedData == 3){
       velocidadObjetivo = Wire.read();
+      Serial.println("velicidad recibida");
     }else if(requestedData == 4){
       MiCServo.MoverServo(Wire.read());
+      Serial.println("angulo recibido");
+    }else if(requestedData == 5){
+      int valor_enable = Wire.read();
+      //digitalWrite(PinEnable,valor_enable);
+      Serial.print("enable recibida: ");
+      Serial.println(valor_enable);
     }
 
   }
@@ -179,5 +195,5 @@ ISR(TIMER2_COMPB_vect){
 void LecturaUltrasonidos(){
   distanceCentral=ultrasonicCentral.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
-  distanceIzquierdo=ultrasonicDerecho.read();
+  distanceDerecho=ultrasonicDerecho.read();
 }
