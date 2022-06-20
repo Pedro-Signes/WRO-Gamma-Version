@@ -113,6 +113,9 @@ void setup() {
 
   Serial.println("Todo funcionando");
   delay(2000);
+
+  MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
+
 }
 
 void LecturaUltrasonidos();
@@ -122,11 +125,11 @@ void loop() {
   //Serial.print(velocidad);
   //Serial.print(" ");
   //Serial.println(MiMotor.GetPotencia());
-  //MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
   if (millis() > tiempo){
     LecturaUltrasonidos();
     tiempo = millis() + 20;
   }
+  MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
 }
   
 
@@ -139,6 +142,8 @@ void receiveEvent(int howMany) {
       velocidadObjetivo = Wire.read();
     }else if(requestedData == 4){
       MiCServo.MoverServo(Wire.read());
+    }else if(requestedData == 5){
+      digitalWrite(14,Wire.read());
     }
 
   }
@@ -179,5 +184,6 @@ ISR(TIMER2_COMPB_vect){
 void LecturaUltrasonidos(){
   distanceCentral=ultrasonicCentral.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
-  distanceIzquierdo=ultrasonicDerecho.read();
+  distanceDerecho=ultrasonicDerecho.read();
 }
+
