@@ -4,6 +4,8 @@
 
 float valorBrujula = 0;
 float offset;
+int vuelta = 1;
+int giros = 0;
 uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 
@@ -134,8 +136,29 @@ void loop() {
       medirUltrasonidos();
   }
 
-  if(medidasUltrasonidos[1] > 100){
-    setVelocidad(0);
+    static uint32_t prev_ms3 = millis();
+  if (millis()> prev_ms3) {
+      prev_ms3 = millis() + 20;
+      medirEncoder();
+  }
+
+
+  if(giros < 12){ //cosa para hoy
+
+     if(medidasUltrasonidos[1] > 100){
+
+      setGiro(90*vuelta);
+      vuelta++;
+
+    }
+
+
+  }else if(giros = 120){
+
+   if( medirEncoder() > 1000){
+
+     setVelocidad(0);
+
   }
 
   
