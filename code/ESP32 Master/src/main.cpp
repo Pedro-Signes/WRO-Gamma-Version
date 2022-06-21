@@ -36,6 +36,16 @@ long medirEncoder() {
   return medidaEncoder;
 }
 
+// Devuelve la posición donde hay que poner el servo
+int ErrorDireccion(int bearing, int target){
+  int error = bearing - target;
+  if (error == 0) return 0;
+  if (error > 180) error -= 360;
+  if (error < -180) error += 360;
+  return -1*error;
+}
+
+
 void setEnable(int motrorEnable){
   Wire.beginTransmission(4);
   Wire.write(5);
@@ -43,10 +53,10 @@ void setEnable(int motrorEnable){
   Wire.endTransmission();
 }
 
-void setGiro(int angulo){
+void setGiro(int posicionServo){
   Wire.beginTransmission(4);
   Wire.write(4);
-  Wire.write(angulo);
+  Wire.write(posicionServo);
   Wire.endTransmission();
 }
 
@@ -103,7 +113,8 @@ void setup() {
 
   //loadCalibration();
 
-
+  medirUltrasonidos();
+   
   int num =0;
   float tot =0;
   while (num < 1000){
@@ -116,10 +127,19 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
+  setEnable(1);
   setVelocidad(20);
+  
 
 
 }
+
+int ErrorDireccionAnterior = -100;
+int ErrorDireccionActual = 0;
+int direccionObjetivo = 0; 
+
+bool GiroRealizado = true;
+
 
 void loop() {
   
@@ -128,12 +148,23 @@ void loop() {
       Duracion_de_la_muestra = millis() - prev_ms;
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
+      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+      if(ErrorDireccionAnterior != ErrorDireccionActual){
+        setGiro(ErrorDireccionActual);
+        ErrorDireccionAnterior = ErrorDireccionActual;
+      }
   }
     
   static uint32_t prev_ms2 = millis();
   if (millis()> prev_ms2) {
       prev_ms2 = millis() + 20;
       medirUltrasonidos();
+      Serial.print(medidasUltrasonidos[0]);
+      Serial.print(" ");
+      Serial.print(medidasUltrasonidos[1]);
+      Serial.print(" ");
+      Serial.println(medidasUltrasonidos[2]);
+
   }
 
     static uint32_t prev_ms3 = millis();
@@ -143,21 +174,36 @@ void loop() {
   }
 
 
-  if(giros < 12){ //cosa para hoy
+  if(true ){  //giros < 12
+    if(medidasUltrasonidos[1] > 80){
+      if(GiroRealizado){
+        direccionObjetivo = 90*vuelta;
+        vuelta++;
+        ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+        GiroRealizado = false;
+      }
+    }/*else if(medidasUltrasonidos[2] > 80){
+      if(GiroRealizado){
+        direccionObjetivo = -90*vuelta; 
+        vuelta++;
+        ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+        GiroRealizado = false;
+        Serial.println("si he girado");
+      }
+    }*/
 
-     if(medidasUltrasonidos[1] > 100){
-
-      setGiro(90*vuelta);
-      vuelta++;
-
+    if(abs(ErrorDireccionActual) < 5){
+      GiroRealizado = true;
     }
 
 
-  }else if(giros = 120){
+  }else if(giros == 12){
 
    if( medirEncoder() > 1000){
 
      setVelocidad(0);
+
+     }
 
   }
 
