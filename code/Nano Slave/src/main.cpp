@@ -120,7 +120,7 @@ void loop() {
   //Serial.println(MiMotor.GetPotencia());
   if (millis() > tiempo){
     LecturaUltrasonidos();
-    tiempo = millis() + 50;
+    tiempo = millis() + 20;
   }
 
   
