@@ -163,15 +163,7 @@ void loop() {
 
     prev_ms2 = millis() + 20;
     medirUltrasonidos();
-    Serial.print("Central:");
-    Serial.print(medidasUltrasonidos[ultraCentral]);
-    Serial.print(" ");
-    Serial.print("Derecho:");
-    Serial.print(medidasUltrasonidos[ultraDerecho]);
-    Serial.print(" ");
-    Serial.print("Izquierdo:");
-    Serial.println(medidasUltrasonidos[ultraIzquierdo]);
-
+   
   }
 
   static uint32_t prev_ms3 = millis();
@@ -180,17 +172,18 @@ void loop() {
       medirEncoder();
   }
 
-  /*if(true){
+  if(true){
+    if(medidaEncoder > 2000)
     if(medidasUltrasonidos[0] < 75){
-
-      if(GiroRealizado){
-        direccionObjetivo = 90*vuelta;
-        vuelta++;
-        ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-        GiroRealizado = false;
-        giros++;
+      if(medidasUltrasonidos[0] < 75){
+        if(GiroRealizado){
+          direccionObjetivo = 90*vuelta;
+          vuelta++;
+          ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+          GiroRealizado = false;
+          giros++;
+        }
       }
-
       /*if(medidasUltrasonidos[1] > 75){
         if(GiroRealizado){
           direccionObjetivo = 90*vuelta;
@@ -210,7 +203,7 @@ void loop() {
         giros++;
         }
       }*/
-      /*if(giros == 12){
+      if(giros == 12){
         setVelocidad(0);
       }
 
@@ -220,6 +213,6 @@ void loop() {
   
    
     } 
-  }*/
+  }
 
 }
