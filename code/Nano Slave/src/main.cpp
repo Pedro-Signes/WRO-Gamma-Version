@@ -21,7 +21,7 @@
 volatile long encoder = 0;
 bool lecturaEncoder = false;
 int vuelta = 1;
-float valor = 0;
+//float posicion_servo = 0;
 float offset;
 volatile float velocidad;
 float face = 0;
@@ -70,17 +70,10 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
-int ErrorDireccion(int bearing, int target){
-  int error = bearing - target;
-  if (error == 0) return 0;
-  if (error > 180) error -= 360;
-  if (error < -180) error += 360;
-  return -1*error;
-}
 
-Ultrasonic ultrasonicCentral(11,4);//central
-Ultrasonic ultrasonicIzquierdo(3,8);//izquierdo
-Ultrasonic ultrasonicDerecho(7,6);//derecho
+Ultrasonic ultrasonicCentral(11,4,20000UL);//central
+Ultrasonic ultrasonicIzquierdo(3,8,20000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(7,6,20000UL);//derechoS
 
 void setup() {
   pinMode(PinEnable,OUTPUT);
@@ -104,8 +97,7 @@ void setup() {
   }
   pixels.show();
 
-  MiCServo.MoverServo(ErrorDireccion(valor,0));
-  delay(100);
+  MiCServo.MoverServo(0);
   Serial.println("Configurando interrupciones");
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
@@ -116,7 +108,6 @@ void setup() {
   sei(); 
 
   Serial.println("Todo funcionando");
-  delay(2000);
 
 }
 
@@ -129,8 +120,11 @@ void loop() {
   //Serial.println(MiMotor.GetPotencia());
   if (millis() > tiempo){
     LecturaUltrasonidos();
-    tiempo = millis() + 20;
+    tiempo = millis() + 50;
   }
+
+  
+
   MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
   delay(16);
 }
@@ -187,6 +181,8 @@ ISR(TIMER2_COMPB_vect){
 
 void LecturaUltrasonidos(){
   distanceCentral=ultrasonicCentral.read();
+  delay(15);
   distanceIzquierdo=ultrasonicIzquierdo.read();
+  delay(15);
   distanceDerecho=ultrasonicDerecho.read();
 }
