@@ -74,9 +74,9 @@ void encoderISR() {  // función para que funcien el encoder
 }
 
 
-Ultrasonic ultrasonicCentral(11,4,20000UL);//central
-Ultrasonic ultrasonicIzquierdo(3,8,20000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(7,6,20000UL);//derechoS
+Ultrasonic ultrasonicCentral(11,4,10000UL);//central
+Ultrasonic ultrasonicIzquierdo(3,8,10000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(7,6,10000UL);//derechos
 
 void setup() {
   pinMode(PinEnable,OUTPUT);
@@ -94,9 +94,13 @@ void setup() {
   pixels.begin();
   delay(100);
   pixels.clear();
-  for(int i=0; i<NUMPIXELS; i++) {
+  /*for(int i=0; i<NUMPIXELS; i++) {
 
     pixels.setPixelColor(i, pixels.Color(255, 255, 255));
+  }*/
+  for(int i=0; i<NUMPIXELS; i++) {
+
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
   }
   pixels.show();
 
@@ -123,7 +127,7 @@ void loop() {
   //Serial.println(MiMotor.GetPotencia());
   if (millis() > tiempo){
     LecturaUltrasonidos();
-    tiempo = millis() + 20;
+    tiempo = millis() + 5;
   }
 
   
@@ -184,8 +188,6 @@ ISR(TIMER2_COMPB_vect){
 
 void LecturaUltrasonidos(){
   distanceCentral=ultrasonicCentral.read();
-  delay(15);
   distanceIzquierdo=ultrasonicIzquierdo.read();
-  delay(15);
   distanceDerecho=ultrasonicDerecho.read();
 }

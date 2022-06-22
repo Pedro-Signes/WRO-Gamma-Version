@@ -19,13 +19,13 @@ int Anchura2;
 int AnchuraPrevia1;
 int AnchuraPrevia2;
 
-void setGiro(int posicionServo){
+/*void setGiro(int posicionServo){
   Wire.beginTransmission(4);
   Wire.write(4);
   Wire.write(posicionServo);
   Wire.endTransmission();
   Serial.println(posicionServo);
-}
+}*/
 
 void setup() {
   // put your setup code here, to run once:
@@ -38,7 +38,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  setGiro(0);
+ // setGiro(0);
 
   pixy.ccc.getBlocks();
 
@@ -61,6 +61,10 @@ void loop() {
   {
     if (AnchuraPrevia1 == Anchura1)
     {
+      Color1 = 0;
+      PosicionX1 = 0;
+      PosicionY1 = 0;
+      Altura1 = 0;
       Anchura1 = 0;
     }
   }
@@ -69,6 +73,10 @@ void loop() {
   {
     if (AnchuraPrevia2 == Anchura2)
     {
+      Color2 = 0;
+      PosicionX2 = 0;
+      PosicionY2 = 0;
+      Altura2 = 0;
       Anchura2 = 0;
     }
   }
@@ -81,16 +89,17 @@ void loop() {
       //setGiro(Posición del servo)
       while (Color1 == 1)
       {
-        setGiro(-20);
-        Serial.println("Ha entrado!!!!");
+        //setGiro(-20);
+        Serial.println("Ha entrado!!!!1");
       }
     }
     if (Color1 == 2)
     {
       //Para el rojo pasar por la derecha
-      while (Color1 == 1)
+      while (Color1 == 2)
       {
-        setGiro(20);
+       // setGiro(20);
+        Serial.println("Ha entrado!!!!2");
       }
     }
   }
@@ -107,4 +116,11 @@ void loop() {
     }
   }  */
 
+  static uint32_t prev_ms2 = millis();
+  if (millis()> prev_ms2) {
+    prev_ms2 = millis() + 20;
+    Serial.print(Color1);
+    Serial.print(",");
+    Serial.println(Color2);
+  }
 }

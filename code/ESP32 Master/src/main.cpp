@@ -1,6 +1,19 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <MPU9250.h>
+#include <WebServer.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+#define CONSOLE_IP "192.168.1.2"
+#define CONSOLE_PORT 4210
+const char* ssid = "ESP32";
+const char* password = "12345678";
+WiFiUDP Udp;
+IPAddress local_ip(192, 168, 1, 1);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+WebServer server(80);
 
 float valorBrujula = 0;
 float offset;
@@ -9,13 +22,16 @@ int giros = 0;
 uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 
-int sentidoGiro = 1;
+int UltrasonidosPrevio1[3];
+int UltrasonidosPrevio2[3];
+
+bool sentidoGiro = 1;
 
 long solicitudEncoder();
 byte medidasUltrasonidos[3];
-int ultraDerecho = 2;
-int ultraCentral = 0;
-int ultraIzquierdo = 1;
+byte ultraDerecho = 2;
+byte ultraCentral = 0;
+byte ultraIzquierdo = 1;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
@@ -88,6 +104,20 @@ void setVelocidad(byte velocidad){
 }
 
 void medirUltrasonidos(){
+  byte i1 = 0;
+  while (i1 < 3)
+  {
+    UltrasonidosPrevio2[i1] = UltrasonidosPrevio1[i1];
+    i1++;
+  }
+
+  byte i2 = 0;
+  while (i2 < 3)
+  {
+    UltrasonidosPrevio1[i2] = medidasUltrasonidos[i2];
+    i2++;
+  }
+
   Wire.beginTransmission(4);
   Wire.write(2);
   Wire.endTransmission();
@@ -102,6 +132,11 @@ void medirUltrasonidos(){
 
 
 void setup() {
+
+  WiFi.softAP(ssid, password);
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+  server.begin();
+
   pinMode(LED_BUILTIN,OUTPUT);
   Wire.begin();
   uint32_t freq = 400000;
@@ -148,6 +183,8 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
+  delay(2000);
+
   setEnable(1);
   setVelocidad(20);
   
@@ -155,7 +192,7 @@ void setup() {
 
 }
 
-int ErrorDireccionAnterior = -100;
+int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0; 
 
@@ -191,10 +228,33 @@ void loop() {
   }
 
 
+  static uint32_t prev_ms4 = millis();
+  if (millis()> prev_ms4) {
+    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
+  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
+  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
+  Udp.printf(";");
+  Udp.printf(String(estado).c_str());
+  Udp.printf(";");
+  Udp.printf(String(90*vuelta).c_str());
+  Udp.printf(";");
+  Udp.printf(String(valorBrujula).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder).c_str());
+  Udp.endPacket();
+  prev_ms4 = millis() + 20;
+  }
+
  switch (estado)
  {
  case e::Inico:
-  if(medidasUltrasonidos[ultraCentral] < 80){
+  if(medidasUltrasonidos[ultraCentral] < 90){
     estado = e::DecidiendoGiro;
     setVelocidad(20);
   } 
@@ -203,14 +263,29 @@ void loop() {
  case e::Recto:
   /*if(giros>=12){
    estado = e::Parado;
-  }else*/ //if(MarcaEncoder - medidaencoder > 0){ //10cm con 120 pasos de encoder
-    if(medidasUltrasonidos[ultraCentral] < 80){
-      estado = e::DecidiendoGiro;
-    }
-  //}
+  }else*/
+    //if (abs(UltrasonidosPrevio1[ultraCentral] - medidasUltrasonidos[ultraCentral]) <= 10)
+    //{
+    if((medidaencoder - MarcaEncoder) > 900){ //10cm con 120 pasos de encoder
+      if(medidasUltrasonidos[ultraCentral] < 90){
+        estado = e::DecidiendoGiro;
+      }
+    //}
+  }
+    
   break;
 
  case e::DecidiendoGiro:
+
+  /*bool valido = true;
+  byte i = 1;
+  while (i<3){
+  if (abs(UltrasonidosPrevio1[i] - medidasUltrasonidos[i]) >= 10)
+  {
+    valido = false;
+  }
+  }*/
+  if (true){ //if (valido){
   if(medidasUltrasonidos[ultraIzquierdo] > 70){
     sentidoGiro = 1;
     estado = e::Girando;
@@ -220,7 +295,7 @@ void loop() {
   }/*else if (medidasUltrasonidos[ultraCentral] < 20){
     setVelocidad(0);
     estado = e::Atras;
-  }*/
+  }*/}
   break;
 
  case e::Girando:
