@@ -9,11 +9,28 @@ int giros = 0;
 uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 
+int sentidoGiro = 1;
+
 long solicitudEncoder();
 byte medidasUltrasonidos[3];
 int ultraDerecho = 2;
 int ultraCentral = 0;
 int ultraIzquierdo = 1;
+
+long medidaencoder = 0;
+long MarcaEncoder = 0;
+
+enum e{
+  Recto,
+  Girando,
+  Parado,
+  DecidiendoGiro,
+  Inico,
+  Atras
+};
+
+int estado = e::Inico;
+
 
 /*void Calibrar(){ // función para calibrar ( revisar )
   mpu.verbose(true);  
@@ -30,13 +47,13 @@ long medirEncoder() {
   Wire.write(1);
   Wire.endTransmission();
   Wire.requestFrom(4,4);
-  long medidaEncoder;
+  long _medidaEncoder;
   byte iteracion = 0;
   while( iteracion < 4){
-    medidaEncoder = medidaEncoder | Wire.read()<<(8*iteracion);
+    _medidaEncoder = _medidaEncoder | Wire.read()<<(8*iteracion);
     iteracion++;
   }
-  return medidaEncoder;
+  return _medidaEncoder;
 }
 
 // Devuelve la posición donde hay que poner el servo
@@ -92,7 +109,8 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   setEnable(1);
-
+  estado = e::Inico;
+  
   //Calibrar();
 
   for(int i = 0; i<20 ; i++){
@@ -168,12 +186,88 @@ void loop() {
 
   static uint32_t prev_ms3 = millis();
   if (millis()> prev_ms3) {
-      prev_ms3 = millis() + 20;
-      medirEncoder();
+      prev_ms3 = millis() + 30;
+      medidaencoder = medirEncoder();
   }
 
+
+ switch (estado)
+ {
+ case e::Inico:
+  if(medidasUltrasonidos[ultraCentral] < 80){
+    estado = e::DecidiendoGiro;
+    setVelocidad(20);
+  } 
+  break;
+
+ case e::Recto:
+  /*if(giros>=12){
+   estado = e::Parado;
+  }else*/ //if(MarcaEncoder - medidaencoder > 0){ //10cm con 120 pasos de encoder
+    if(medidasUltrasonidos[ultraCentral] < 80){
+      estado = e::DecidiendoGiro;
+    }
+  //}
+  break;
+
+ case e::DecidiendoGiro:
+  if(medidasUltrasonidos[ultraIzquierdo] > 70){
+    sentidoGiro = 1;
+    estado = e::Girando;
+  }else if(medidasUltrasonidos[ultraDerecho] > 70){
+    sentidoGiro = -1;
+    estado = e::Girando;
+  }/*else if (medidasUltrasonidos[ultraCentral] < 20){
+    setVelocidad(0);
+    estado = e::Atras;
+  }*/
+  break;
+
+ case e::Girando:
+  if(GiroRealizado){
+    direccionObjetivo = sentidoGiro*90*vuelta;
+    vuelta++;
+    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+    GiroRealizado = false;
+    giros++;
+  }
+  if(abs(ErrorDireccionActual) < 10){
+    GiroRealizado = true;
+    MarcaEncoder = medirEncoder();
+    estado = e::Recto;
+  }
+
+  break;
+
+ case e::Parado:
   if(true){
-    if(medidaEncoder > 2000)
+    setVelocidad(0);
+  }
+  break;
+
+ case e::Atras:
+  setVelocidad(-10);
+  if(medidasUltrasonidos[ultraCentral] > 40){
+   setVelocidad(0);
+   if(medidasUltrasonidos[ultraIzquierdo] > 70){
+    sentidoGiro = 1;
+    setVelocidad(20);
+    estado = e::Girando;
+   }else if(medidasUltrasonidos[ultraDerecho] > 70){
+    sentidoGiro = -1;
+    setVelocidad(20);
+    estado = e::Girando;
+   }
+  }
+  break;
+}
+
+ 
+
+
+
+  /*if(true){
+    if( > 2000)
     if(medidasUltrasonidos[0] < 75){
       if(medidasUltrasonidos[0] < 75){
         if(GiroRealizado){
@@ -201,18 +295,7 @@ void loop() {
         ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
         GiroRealizado = false;
         giros++;
-        }
-      }*/
-      if(giros == 12){
-        setVelocidad(0);
-      }
-
-      if(abs(ErrorDireccionActual) < 5){
-        GiroRealizado = true;
-      }
-  
-   
-    } 
-  }
+    }
+  }*/
 
 }

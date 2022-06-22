@@ -19,6 +19,7 @@
 #define DELAYVAL 50
 
 volatile long encoder = 0;
+volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
 int vuelta = 1;
 //float posicion_servo = 0;
@@ -62,10 +63,12 @@ void encoderISR() {  // función para que funcien el encoder
   if (forward == true) 
   {
     encoder ++;
+    encoderAbsoluto++;
   }
   else
   {
     encoder --;
+    encoderAbsoluto--;
   }
   
 }
@@ -153,10 +156,10 @@ void receiveEvent(int howMany) {
 void requestEvent() {
 
   if (requestedData == 1) {
-    datoEncoder[0]=encoder & 0xff;
-    datoEncoder[1]=(encoder>>8) & 0xff;
-    datoEncoder[2]=(encoder>>16) & 0xff;
-    datoEncoder[3]=(encoder>>24) & 0xff;
+    datoEncoder[0]=encoderAbsoluto & 0xff;
+    datoEncoder[1]=(encoderAbsoluto>>8) & 0xff;
+    datoEncoder[2]=(encoderAbsoluto>>16) & 0xff;
+    datoEncoder[3]=(encoderAbsoluto>>24) & 0xff;
     Wire.write(datoEncoder,4);
   }
   else if (requestedData == 2){
