@@ -69,10 +69,10 @@ void loop() {
 
  // setGiro(0);
 
- static uint32_t prev_ms = millis();
+ static uint32_t prev_ms50 = millis();
   if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms;
-      prev_ms = millis();
+      Duracion_de_la_muestra = millis() - prev_ms50;
+      prev_ms50 = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       if(ErrorDireccionAnterior != ErrorDireccionActual){
@@ -95,7 +95,7 @@ void loop() {
   Altura2 = pixy.ccc.blocks[1].m_height;
   Anchura2 = pixy.ccc.blocks[1].m_width;
 
-  static uint32_t prev_ms4 = millis();
+  /*static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) 
   {
     if (AnchuraPrevia1 == Anchura1)
@@ -122,7 +122,7 @@ void loop() {
     }
   }
     prev_ms4 = millis() + 150;
-  }
+  }*/
 
   static uint32_t prev_ms3 = millis();
   if (millis()> prev_ms3) 
@@ -136,17 +136,16 @@ void loop() {
         //Hacer lo del verde
         //Para girar
         //direccionObjetivo = ErrorDireccionActual + 30; //Lo que quieras girar
-        if (PosicionX1 >= 150 && Anchura1 >= 10 /*Cuando este bien para girar, y la ancura para lo mismo*/)
+        if (Altura1 <= 78 && PosicionX1 >= 180 /*Cuando este bien para girar, y la ancura para lo mismo*/)
         {
           //Girar a la izquierda para ESQUIVAR el bloque
           direccionObjetivo = ErrorDireccionActual + 30;
-
-          Serial.print("Entra en el verde si");
+          //Serial.print("Entra en el verde si");
         }
-        else if(PosicionX1 <= 150 && Anchura1 <= 23/*Cuando no le de para girar*/)
+        else if(Anchura1 <= 78 && PosicionX1 <= 180/*Cuando no le de para girar*/)
         {
-          //Vuelve atras y volver a empezar la operacion
-          Serial.print("Entra en el verde no");
+          //Vuelve atras y volver a empezar la operacion!!!
+          //Serial.print("Entra en el verde no");
         }
      }
 
@@ -154,7 +153,8 @@ void loop() {
      {
         //Para el rojo pasar por la derecha
         //Hacer lo del rojo
-        Serial.print("Entra en el rojo");
+        //Serial.print("Entra en el rojo");
+        //Practicamente lo mismo pero al reves
      }
    }
 
@@ -176,8 +176,8 @@ void loop() {
   if (millis()> prev_ms2) {
     Serial.print(Color1);
     Serial.print(",");
-    Serial.print(Color2);
-    Serial.print(",");
+    //Serial.print(Color2);
+   // Serial.print(",");
     Serial.print(Anchura1);
     Serial.print(",");
     Serial.print(Altura1);
@@ -185,7 +185,7 @@ void loop() {
     Serial.print(PosicionY1);
     Serial.print(",");
     Serial.println(PosicionX1);
-    prev_ms2 = millis() + 250;
+    prev_ms2 = millis() + 350;
 
   }
 
