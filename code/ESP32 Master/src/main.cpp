@@ -25,7 +25,7 @@ MPU9250 mpu;
 int UltrasonidosPrevio1[3];
 int UltrasonidosPrevio2[3];
 
-bool sentidoGiro = 1;
+int sentidoGiro;
 
 long solicitudEncoder();
 byte medidasUltrasonidos[3];
@@ -37,9 +37,10 @@ long medidaencoder = 0;
 long MarcaEncoder = 0;
 
 enum e{
-  Recto,
+  RectoRapido,
+  RectoLento,
   Girando,
-  Parado,
+  Final,
   DecidiendoGiro,
   Inico,
   Atras
@@ -92,14 +93,27 @@ void setEnable(int motrorEnable){
 void setGiro(int posicionServo){
   Wire.beginTransmission(4);
   Wire.write(4);
-  Wire.write(posicionServo);
+ 
+  if(posicionServo<0){
+    Wire.write(-posicionServo);
+    Wire.write(0);
+  }else{
+    Wire.write(posicionServo);
+    Wire.write(2);
+  }
   Wire.endTransmission();
 }
 
-void setVelocidad(byte velocidad){
+void setVelocidad(int velocidad){
   Wire.beginTransmission(4);
   Wire.write(3);
-  Wire.write(velocidad);
+  if(velocidad<0){
+    Wire.write(-velocidad);
+    Wire.write(0);
+  }else{
+    Wire.write(velocidad);
+    Wire.write(2);
+  }
   Wire.endTransmission();
 }
 
@@ -197,7 +211,41 @@ int ErrorDireccionActual = 0;
 int direccionObjetivo = 0; 
 
 bool GiroRealizado = true;
+bool PrimeraParada = true;
+bool SegundaParada = true;
 
+void EnviarTelemetria(){
+  static uint32_t prev_ms4 = millis();
+  if (millis()> prev_ms4) {
+    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
+  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
+  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
+  Udp.printf(";");
+  Udp.printf(String(estado).c_str());
+  Udp.printf(";");
+  Udp.printf(String(90*vuelta).c_str());
+  Udp.printf(";");
+  Udp.printf(String(valorBrujula).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder).c_str());
+  Udp.printf(";");
+  Udp.printf(String(ErrorDireccionAnterior).c_str());
+  Udp.printf(";");
+  Udp.printf(String(ErrorDireccionActual).c_str());
+  Udp.printf(";");
+  Udp.printf(String(giros).c_str());
+  Udp.printf(";");
+  Udp.printf(String(sentidoGiro).c_str());
+  Udp.endPacket();
+  prev_ms4 = millis() + 20;
+  }
+ }
 
 void loop() {
   
@@ -206,7 +254,8 @@ void loop() {
       Duracion_de_la_muestra = millis() - prev_ms;
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+      ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;
@@ -227,75 +276,56 @@ void loop() {
       medidaencoder = medirEncoder();
   }
 
-
-  static uint32_t prev_ms4 = millis();
-  if (millis()> prev_ms4) {
-    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-  Udp.printf(";");
-  Udp.printf(String(estado).c_str());
-  Udp.printf(";");
-  Udp.printf(String(90*vuelta).c_str());
-  Udp.printf(";");
-  Udp.printf(String(valorBrujula).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidaencoder).c_str());
-  Udp.endPacket();
-  prev_ms4 = millis() + 20;
-  }
+  static uint32_t prev_ms5;
+  static uint32_t prev_ms6;
 
  switch (estado)
  {
  case e::Inico:
+  setVelocidad(25);
   if(medidasUltrasonidos[ultraCentral] < 90){
     estado = e::DecidiendoGiro;
-    setVelocidad(20);
-  } 
+  }
   break;
 
- case e::Recto:
-  /*if(giros>=12){
-   estado = e::Parado;
-  }else*/
-    //if (abs(UltrasonidosPrevio1[ultraCentral] - medidasUltrasonidos[ultraCentral]) <= 10)
-    //{
-    if((medidaencoder - MarcaEncoder) > 900){ //10cm con 120 pasos de encoder
-      if(medidasUltrasonidos[ultraCentral] < 90){
-        estado = e::DecidiendoGiro;
-      }
-    //}
-  }
+ case e::RectoRapido:
+  if(giros ==12){
+   estado = e::Final;
+  }else{
+    setVelocidad(40);
+    if((medidaencoder - MarcaEncoder) > 450){ //10cm con 120 pasos de encoder
+      estado = e::RectoLento;
+  }}
     
   break;
 
- case e::DecidiendoGiro:
+ case e::RectoLento:
+  setVelocidad(17);
+  if(medidasUltrasonidos[ultraCentral] < 90){
+        estado = e::DecidiendoGiro;
+      }
+  break;
 
-  /*bool valido = true;
-  byte i = 1;
-  while (i<3){
-  if (abs(UltrasonidosPrevio1[i] - medidasUltrasonidos[i]) >= 10)
-  {
-    valido = false;
-  }
-  }*/
-  if (true){ //if (valido){
-  if(medidasUltrasonidos[ultraIzquierdo] > 70){
+ case e::DecidiendoGiro:
+  setVelocidad(13);
+  
+  if(medidasUltrasonidos[ultraIzquierdo] > 90){
     sentidoGiro = 1;
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] > 70){
+  }else if(medidasUltrasonidos[ultraDerecho] > 90){
     sentidoGiro = -1;
     estado = e::Girando;
-  }/*else if (medidasUltrasonidos[ultraCentral] < 20){
+  }else if (medidasUltrasonidos[ultraCentral]<=50){
     setVelocidad(0);
-    estado = e::Atras;
-  }*/}
+    if (PrimeraParada){
+      prev_ms5 = millis() + 400;
+      PrimeraParada = false;
+    }
+    if (millis()> prev_ms5) {
+      PrimeraParada = true;
+      estado = e::Atras;
+  }
+  }
   break;
 
  case e::Girando:
@@ -309,68 +339,33 @@ void loop() {
   if(abs(ErrorDireccionActual) < 10){
     GiroRealizado = true;
     MarcaEncoder = medirEncoder();
-    estado = e::Recto;
+    estado = e::RectoRapido;
   }
 
   break;
 
- case e::Parado:
-  if(true){
+ case e::Final:
+  if((medidaencoder - MarcaEncoder) > 500){
     setVelocidad(0);
   }
   break;
 
+
  case e::Atras:
-  setVelocidad(-10);
-  if(medidasUltrasonidos[ultraCentral] > 40){
+  setVelocidad(-13);
+  if(medidasUltrasonidos[ultraCentral] > 50){
    setVelocidad(0);
-   if(medidasUltrasonidos[ultraIzquierdo] > 70){
-    sentidoGiro = 1;
-    setVelocidad(20);
-    estado = e::Girando;
-   }else if(medidasUltrasonidos[ultraDerecho] > 70){
-    sentidoGiro = -1;
-    setVelocidad(20);
+   if (SegundaParada){
+    prev_ms6 = millis() + 400;
+    SegundaParada = false;
+   }
+   if (millis()> prev_ms6) {
+    setVelocidad(13);
+    SegundaParada = true;
     estado = e::Girando;
    }
   }
   break;
 }
-
- 
-
-
-
-  /*if(true){
-    if( > 2000)
-    if(medidasUltrasonidos[0] < 75){
-      if(medidasUltrasonidos[0] < 75){
-        if(GiroRealizado){
-          direccionObjetivo = 90*vuelta;
-          vuelta++;
-          ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-          GiroRealizado = false;
-          giros++;
-        }
-      }
-      /*if(medidasUltrasonidos[1] > 75){
-        if(GiroRealizado){
-          direccionObjetivo = 90*vuelta;
-          vuelta++;
-          ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-          GiroRealizado = false;
-          giros++;
-        }
-      }*/
-      /*}else if(medidasUltrasonidos[2] > 75){
-        if(medidasUltrasonidos[0] < 90){
-        if(GiroRealizado){
-        direccionObjetivo = -90*vuelta; 
-        vuelta++;
-        ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-        GiroRealizado = false;
-        giros++;
-    }
-  }*/
 
 }
