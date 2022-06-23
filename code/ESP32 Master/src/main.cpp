@@ -25,7 +25,7 @@ MPU9250 mpu;
 int UltrasonidosPrevio1[3];
 int UltrasonidosPrevio2[3];
 
-int sentidoGiro;
+int sentidoGiro = 0;
 
 long solicitudEncoder();
 byte medidasUltrasonidos[3];
@@ -36,12 +36,21 @@ byte ultraIzquierdo = 1;
 long medidaencoder = 0;
 long MarcaEncoder = 0;
 
+int ErrorDireccionAnterior = 0;
+int ErrorDireccionActual = 0;
+int direccionObjetivo = 0; 
+
+bool GiroRealizado = true;
+bool PrimeraParada = true;
+bool SegundaParada = true;
+
 enum e{
   RectoRapido,
   RectoLento,
   Girando,
   Final,
   DecidiendoGiro,
+  DecidiendoGiroPrimero,
   Inico,
   Atras
 };
@@ -143,7 +152,20 @@ void medirUltrasonidos(){
   }
 }
 
-
+uint32_t prev_ms5;
+void Frenar(byte distancia){
+  if (medidasUltrasonidos[ultraCentral] <= distancia){
+    setVelocidad(0);
+    if (PrimeraParada){
+      prev_ms5 = millis() + 400;
+      PrimeraParada = false;
+    }
+    if (millis()> prev_ms5) {
+      PrimeraParada = true;
+      estado = e::Atras;
+  }
+  }
+}
 
 void setup() {
 
@@ -206,13 +228,6 @@ void setup() {
 
 }
 
-int ErrorDireccionAnterior = 0;
-int ErrorDireccionActual = 0;
-int direccionObjetivo = 0; 
-
-bool GiroRealizado = true;
-bool PrimeraParada = true;
-bool SegundaParada = true;
 
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
@@ -276,15 +291,14 @@ void loop() {
       medidaencoder = medirEncoder();
   }
 
-  static uint32_t prev_ms5;
   static uint32_t prev_ms6;
 
  switch (estado)
  {
  case e::Inico:
-  setVelocidad(25);
+  setVelocidad(20);
   if(medidasUltrasonidos[ultraCentral] < 90){
-    estado = e::DecidiendoGiro;
+    estado = e::DecidiendoGiroPrimero;
   }
   break;
 
@@ -306,16 +320,24 @@ void loop() {
       }
   break;
 
- case e::DecidiendoGiro:
+ case e::DecidiendoGiroPrimero:
   setVelocidad(13);
   
   if(medidasUltrasonidos[ultraIzquierdo] > 90){
     sentidoGiro = 1;
+    Frenar(30);
     estado = e::Girando;
   }else if(medidasUltrasonidos[ultraDerecho] > 90){
     sentidoGiro = -1;
+    Frenar(30);
     estado = e::Girando;
-  }else if (medidasUltrasonidos[ultraCentral]<=50){
+  }else Frenar(15);
+  break;
+
+
+ case e::DecidiendoGiro:
+  setVelocidad(13);
+  if (medidasUltrasonidos[ultraCentral] <= 45){
     setVelocidad(0);
     if (PrimeraParada){
       prev_ms5 = millis() + 400;
@@ -323,8 +345,15 @@ void loop() {
     }
     if (millis()> prev_ms5) {
       PrimeraParada = true;
+      MarcaEncoder = medidaencoder;
+      setVelocidad(-13);
       estado = e::Atras;
   }
+  }
+  if(medidasUltrasonidos[ultraIzquierdo] > 90){
+    estado = e::Girando;
+  }else if(medidasUltrasonidos[ultraDerecho] > 90){
+    estado = e::Girando;
   }
   break;
 
@@ -352,8 +381,7 @@ void loop() {
 
 
  case e::Atras:
-  setVelocidad(-13);
-  if(medidasUltrasonidos[ultraCentral] > 50){
+  if((MarcaEncoder - medidaencoder) >= 400){
    setVelocidad(0);
    if (SegundaParada){
     prev_ms6 = millis() + 400;
@@ -362,7 +390,11 @@ void loop() {
    if (millis()> prev_ms6) {
     setVelocidad(13);
     SegundaParada = true;
-    estado = e::Girando;
+    if (sentidoGiro==0){
+      estado= e::DecidiendoGiro;
+    }else{
+      estado = e::Girando;
+    }
    }
   }
   break;
