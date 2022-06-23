@@ -95,7 +95,6 @@ void setup() {
   delay(100);
   pixels.clear();
   /*for(int i=0; i<NUMPIXELS; i++) {
-
     pixels.setPixelColor(i, pixels.Color(255, 255, 255));
   }*/
   for(int i=0; i<NUMPIXELS; i++) {
@@ -144,9 +143,13 @@ void receiveEvent(int howMany) {
     howMany--;
     if (requestedData == 3){
       velocidadObjetivo = Wire.read();
+      velocidadObjetivo = velocidadObjetivo*(Wire.read()-1);
 
-    }else if(requestedData == 4){
-      MiCServo.MoverServo(Wire.read());
+    }else if(requestedData == 4){     //RX servo
+      int argumentoDegiro;
+      argumentoDegiro = Wire.read();
+      argumentoDegiro = argumentoDegiro*(Wire.read()-1);
+      MiCServo.MoverServo(argumentoDegiro);
 
     }else if(requestedData == 5){
       int valor_enable = Wire.read();
