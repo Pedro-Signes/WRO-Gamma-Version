@@ -31,6 +31,7 @@ void CServo::Setup(){
 }
 
 void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
+  _angulo = constrain(_angulo,-27,27);
   int _ang = map(_angulo, -27, 27, servoMIN, servoMAX);
   Miservo.write(_ang);
 }
@@ -88,7 +89,10 @@ void Motor::potencia(int pot){
 void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   _error = velocidadTarget - velocidadActual;
   _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, 0, 255);
-  _errorAnterior = _error; 
-  potencia(int(_potencia));
+  _errorAnterior = _error;
+  if (velocidadTarget==0){
+    potencia(0);
+  }else{
+  potencia(int(_potencia));}
   
 }
