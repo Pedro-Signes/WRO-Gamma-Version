@@ -15,6 +15,8 @@ IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 WebServer server(80);
 
+#define PIN_BOTON 13
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -173,6 +175,8 @@ void setup() {
   WiFi.softAPConfig(local_ip, gateway, subnet);
   server.begin();
 
+  pinMode(PIN_BOTON ,INPUT_PULLUP);
+
   pinMode(LED_BUILTIN,OUTPUT);
   Wire.begin();
   uint32_t freq = 400000;
@@ -219,10 +223,11 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
-  delay(2000);
-
   setEnable(1);
-  
+
+  while (digitalRead(PIN_BOTON));
+
+  delay(1000);
 
 }
 void enviarMensaje(int numero){
