@@ -77,6 +77,10 @@ enum e{
   ManiobraDerecha2,
   ManiobraDerecha3,
   ManiobraDerecha4,
+  ManiobraIzquierda1,
+  ManiobraIzquierda2,
+  ManiobraIzquierda3,
+  ManiobraIzquierda4,
   EsquivarDerecha2,
   EsquivarIzquierda2,
   EsquivarDerecha3,
@@ -547,6 +551,45 @@ void loop() {
     }
   break;
   
+    
+  case e::ManiobraIzquierda1:
+    AutoGiro = false;
+    setGiro(-23);
+    MarcaEncoder = medidaencoder;
+    setVelocidad(-10);
+    estado = e::ManiobraIzquierda2;
+
+  break;
+
+  case e::ManiobraIzquierda2:
+    if((medidaencoder - MarcaEncoder)<-275){
+      setVelocidad(0);
+      direccionObjetivo = direccionObjetivo + 90;
+      AutoGiro = true;
+      setVelocidad(13);
+      estado = e::ManiobraIzquierda3;
+    }  
+  break;
+
+  case e::ManiobraIzquierda3:
+    if(abs(ErrorDireccionActual) <= 20){
+      setVelocidad(0);
+      AutoGiro = false;
+      MarcaEncoder = medidaencoder;
+      setGiro(-5);
+      setVelocidad(-10);
+      estado = e::ManiobraIzquierda4;
+    }
+  break;
+
+  case e::ManiobraIzquierda4:
+    if((medidaencoder - MarcaEncoder)<-500){
+      setVelocidad(0);
+      AutoGiro = true;
+      setVelocidad(13);
+      estado = e::Inicio;
+    }
+  break;
 
  }
 
