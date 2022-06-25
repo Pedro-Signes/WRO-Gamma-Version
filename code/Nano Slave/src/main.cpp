@@ -113,8 +113,6 @@ void setup() {
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
 
-  Serial.println("Todo funcionando");
-
 }
 
 void LecturaUltrasonidos();
@@ -128,8 +126,6 @@ void loop() {
     LecturaUltrasonidos();
     tiempo = millis() + 5;
   }
-
-  
 
   MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
   delay(16);
