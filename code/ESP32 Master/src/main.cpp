@@ -126,20 +126,6 @@ void setVelocidad(int velocidad){
 }
 
 void medirUltrasonidos(){
-  byte i1 = 0;
-  while (i1 < 3)
-  {
-    UltrasonidosPrevio2[i1] = UltrasonidosPrevio1[i1];
-    i1++;
-  }
-
-  byte i2 = 0;
-  while (i2 < 3)
-  {
-    UltrasonidosPrevio1[i2] = medidasUltrasonidos[i2];
-    i2++;
-  }
-
   Wire.beginTransmission(4);
   Wire.write(2);
   Wire.endTransmission();
@@ -220,6 +206,8 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
+  digitalWrite(LED_BUILTIN, HIGH);
+
   setEnable(1);
 
   while (digitalRead(PIN_BOTON));
@@ -278,7 +266,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
+      //EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;
@@ -400,13 +388,13 @@ void loop() {
    }
    if (millis()> prev_ms6) {
     SegundaParada = true;
-    enviarMensaje(66666666);
+    //enviarMensaje(66666666);
     if (sentidoGiro==0){
       estado= e::DecidiendoGiro;
     }else{
       setVelocidad(20);
       estado = e::Girando;
-      enviarMensaje(66666667);
+      //enviarMensaje(66666667);
     }
    }
   }

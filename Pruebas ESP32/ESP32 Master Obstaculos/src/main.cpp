@@ -39,8 +39,6 @@ int PosicionY2;
 int Altura2;
 int Anchura2;
 
-int UltrasonidosPrevio1[3];
-int UltrasonidosPrevio2[3];
 
 int sentidoGiro = 0;
 
@@ -158,19 +156,6 @@ void setVelocidad(int velocidad){
 }
 
 void medirUltrasonidos(){
-  byte i1 = 0;
-  while (i1 < 3)
-  {
-    UltrasonidosPrevio2[i1] = UltrasonidosPrevio1[i1];
-    i1++;
-  }
-
-  byte i2 = 0;
-  while (i2 < 3)
-  {
-    UltrasonidosPrevio1[i2] = medidasUltrasonidos[i2];
-    i2++;
-  }
 
   Wire.beginTransmission(4);
   Wire.write(2);
