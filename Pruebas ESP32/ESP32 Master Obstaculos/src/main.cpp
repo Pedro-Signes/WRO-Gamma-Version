@@ -396,7 +396,7 @@ void loop() {
  case e::DecidiendoGiro:
  
   if(medidasUltrasonidos[ultraIzquierdo] > 90){
-    estado = e::ManiobraIzquierda;
+    estado = e::ManiobraIzquierda1;
   }else if(medidasUltrasonidos[ultraDerecho] > 90){
     estado = e::ManiobraDerecha1;
   }else{
