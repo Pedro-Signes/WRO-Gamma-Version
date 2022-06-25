@@ -63,13 +63,10 @@ bool SegundaParada = true;
 bool AutoGiro = true;
 
 enum e{
-  Recto,
   EsquivarDerecha1,
   EsquivarIzquierda1,
-  ManiobraIzquierda1,
   Final,
   DecidiendoGiro,
-  DecidiendoGiroPrimero,
   Inicio,
   Atras,
   DecidiendoBloque,
@@ -265,14 +262,16 @@ void setup() {
   setVelocidad(13);
 
 }
+
+/*
 void enviarMensaje(int numero){
   Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
-}
+}*/
 
-
+/*
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -304,17 +303,16 @@ void EnviarTelemetria(){
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
- }
+ }*/
 
 void loop() {
-  EnviarTelemetria();
   static uint32_t prev_ms = millis();
   if (mpu.update()) {
       Duracion_de_la_muestra = millis() - prev_ms;
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
+      //EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           setGiro(ErrorDireccionActual);}
@@ -383,15 +381,6 @@ void loop() {
   }
   
   break;
-
- case e::Recto:
-  setVelocidad(17);
-  if(medidasUltrasonidos[ultraCentral] < 15){
-        estado = e::DecidiendoGiro;
-      }
-  break;
-
-
 
  case e::DecidiendoGiro:
  
@@ -499,18 +488,6 @@ void loop() {
   case e::Parado:
     setVelocidad(0);
     break;
-
-  case e::ManiobraIzquierda:
-   setVelocidad(-10);
-    if((medidaencoder - MarcaEncoder)>-300){
-    direccionObjetivo = direccionObjetivo -45;
-    setVelocidad(13);
-    }
-    if(abs(ErrorDireccionActual) <= 5){
-      estado = e::Inicio;
-    }
-
-  break;
 
   case e::ManiobraDerecha1:
     AutoGiro = false;
