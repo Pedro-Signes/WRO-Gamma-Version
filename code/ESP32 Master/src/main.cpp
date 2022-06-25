@@ -269,13 +269,18 @@ void enviarMensaje(int numero){
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
+<<<<<<< Updated upstream
 }*/
+=======
+}
+>>>>>>> Stashed changes
 
 /*
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
     Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
+<<<<<<< Updated upstream
     // Just test touch pin - Touch0 is T0 which is on GPIO 4.
     Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
     Udp.printf(";");
@@ -302,6 +307,40 @@ void EnviarTelemetria(){
     Udp.printf(String(sentidoGiro).c_str());
     Udp.endPacket();
     prev_ms4 = millis() + 10;
+=======
+  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
+  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
+  Udp.printf(";");
+  Udp.printf(String(estado).c_str());
+  Udp.printf(";");
+  Udp.printf(String(90*vuelta).c_str());
+  Udp.printf(";");
+  Udp.printf(String(valorBrujula).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidaencoder).c_str());
+  Udp.printf(";");
+  Udp.printf(String(ErrorDireccionAnterior).c_str());
+  Udp.printf(";");
+  Udp.printf(String(ErrorDireccionActual).c_str());
+  Udp.printf(";");
+  Udp.printf(String(giros).c_str());
+  Udp.printf(";");
+  Udp.printf(String(sentidoGiro).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+  Udp.endPacket();
+  prev_ms4 = millis() + 10;
+>>>>>>> Stashed changes
   }
  }*/
 
@@ -336,9 +375,15 @@ void loop() {
 
 
   static uint32_t prev_ms6;
+<<<<<<< Updated upstream
   int mayor = -1;
   int tamano = 0;
   
+=======
+
+
+
+>>>>>>> Stashed changes
  switch (estado)
  {
  case e::Inicio:
