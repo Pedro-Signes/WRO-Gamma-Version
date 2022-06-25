@@ -4,7 +4,6 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <Pixy2.h>
 
 #define CONSOLE_IP "192.168.1.2"
 #define CONSOLE_PORT 4210
@@ -16,7 +15,6 @@ IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 WebServer server(80);
 
-#define tamanoMinimodeEsquive 55
 #define PIN_BOTON 13
 
 float valorBrujula = 0;
@@ -25,22 +23,6 @@ int vuelta = 1;
 int giros = 0;
 uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
-Pixy2 pixy;
-
-int Color1;
-int PosicionX1;
-int PosicionY1;
-int Altura1;
-int Anchura1;
-
-int Color2;
-int PosicionX2;
-int PosicionY2;
-int Altura2;
-int Anchura2;
-
-int UltrasonidosPrevio1[3];
-int UltrasonidosPrevio2[3];
 
 int sentidoGiro = 0;
 
@@ -60,33 +42,19 @@ int direccionObjetivo = 0;
 bool GiroRealizado = true;
 bool PrimeraParada = true;
 bool SegundaParada = true;
-bool AutoGiro = true;
 
 enum e{
-  EsquivarDerecha1,
-  EsquivarIzquierda1,
+  RectoRapido,
+  RectoLento,
+  Girando,
   Final,
   DecidiendoGiro,
-  Inicio,
-  Atras,
-  DecidiendoBloque,
-  ManiobraDerecha1,
-  ManiobraDerecha2,
-  ManiobraDerecha3,
-  ManiobraDerecha4,
-  ManiobraIzquierda1,
-  ManiobraIzquierda2,
-  ManiobraIzquierda3,
-  ManiobraIzquierda4,
-  EsquivarDerecha2,
-  EsquivarIzquierda2,
-  EsquivarDerecha3,
-  EsquivarIzquierda3,
-  ParadaNoSeQueMasHacer,
-  Parado
+  DecidiendoGiroPrimero,
+  Inico,
+  Atras
 };
 
-int estado = e::Inicio;
+int estado = e::Inico;
 
 
 /*void Calibrar(){ // función para calibrar ( revisar )
@@ -199,10 +167,10 @@ void Frenar(byte distancia){
 }
 
 void setup() {
+
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_ip, gateway, subnet);
   server.begin();
-  pixy.init();
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
@@ -213,7 +181,7 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   setEnable(1);
-  estado = e::Inicio;
+  estado = e::Inico;
   
   //Calibrar();
 
@@ -234,7 +202,7 @@ void setup() {
       Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
       delay(1000);
       digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
-  }
+    }
 
   //loadCalibration();
 
@@ -252,14 +220,11 @@ void setup() {
   offset = tot/num;
   Serial.println("Todo funcionando");
 
-  digitalWrite(LED_BUILTIN,HIGH);
-
   setEnable(1);
 
   while (digitalRead(PIN_BOTON));
-  delay(1000);
 
-  setVelocidad(13);
+  delay(1000);
 
 }
 
@@ -269,45 +234,13 @@ void enviarMensaje(int numero){
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
-<<<<<<< Updated upstream
 }*/
-=======
-}
->>>>>>> Stashed changes
 
 /*
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
     Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-<<<<<<< Updated upstream
-    // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-    Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(estado).c_str());
-    Udp.printf(";");
-    Udp.printf(String(90*vuelta).c_str());
-    Udp.printf(";");
-    Udp.printf(String(valorBrujula).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionAnterior).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionActual).c_str());
-    Udp.printf(";");
-    Udp.printf(String(giros).c_str());
-    Udp.printf(";");
-    Udp.printf(String(sentidoGiro).c_str());
-    Udp.endPacket();
-    prev_ms4 = millis() + 10;
-=======
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
   Udp.printf(";");
@@ -332,38 +265,32 @@ void EnviarTelemetria(){
   Udp.printf(String(giros).c_str());
   Udp.printf(";");
   Udp.printf(String(sentidoGiro).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
   Udp.endPacket();
   prev_ms4 = millis() + 10;
->>>>>>> Stashed changes
   }
  }*/
 
 void loop() {
+  
   static uint32_t prev_ms = millis();
   if (mpu.update()) {
       Duracion_de_la_muestra = millis() - prev_ms;
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
-        if (AutoGiro){
-          setGiro(ErrorDireccionActual);}
+        setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;
       }
   }
     
   static uint32_t prev_ms2 = millis();
   if (millis()> prev_ms2) {
+
     prev_ms2 = millis() + 20;
     medirUltrasonidos();
-    pixy.ccc.getBlocks();
+   
   }
 
   static uint32_t prev_ms3 = millis();
@@ -375,80 +302,85 @@ void loop() {
 
 
   static uint32_t prev_ms6;
-<<<<<<< Updated upstream
-  int mayor = -1;
-  int tamano = 0;
-  
-=======
 
-
-
->>>>>>> Stashed changes
  switch (estado)
  {
- case e::Inicio:
-  
-  if(pixy.ccc.numBlocks){
-    for (int i=0; i < pixy.ccc.numBlocks; i++){
-      if(pixy.ccc.blocks[i].m_height > tamano){
-        mayor = i;
-        tamano = pixy.ccc.blocks[i].m_height;
-      }
-    }
+ case e::Inico:
+  setVelocidad(20);
+  if(medidasUltrasonidos[ultraCentral] < 90){
+    estado = e::DecidiendoGiroPrimero;
   }
-  if (tamano > tamanoMinimodeEsquive){
-    if(pixy.ccc.blocks[mayor].m_signature == 1)
-    {
-      setVelocidad(0);
-      delay(50);
-      direccionObjetivo = direccionObjetivo - 40;
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(-13);
-      MarcaEncoder=medidaencoder;
-      estado = e::EsquivarIzquierda1;
-    }
-    else if (pixy.ccc.blocks[mayor].m_signature == 2)
-    {
-      setVelocidad(0);
-      delay(50);
-      direccionObjetivo = direccionObjetivo + 40;
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(-13);
-      MarcaEncoder=medidaencoder;
-      estado = e::EsquivarDerecha1;
-    }
-
-  }
-  if(medidasUltrasonidos[ultraCentral]<15){
-    estado = e::ParadaNoSeQueMasHacer;
-  }
-  
   break;
+
+ case e::RectoRapido:
+  if(giros ==12){
+   estado = e::Final;
+  }else{
+    setVelocidad(40);
+    if((medidaencoder - MarcaEncoder) > 450){ //10cm con 120 pasos de encoder
+      estado = e::RectoLento;
+  }}
+    
+  break;
+
+ case e::RectoLento:
+  setVelocidad(17);
+  if(medidasUltrasonidos[ultraCentral] < 90){
+        estado = e::DecidiendoGiro;
+      }
+  break;
+
+ case e::DecidiendoGiroPrimero:
+  setVelocidad(13);
+  
+  if(medidasUltrasonidos[ultraIzquierdo] > 90){
+    sentidoGiro = 1;
+    Frenar(30);
+    estado = e::Girando;
+  }else if(medidasUltrasonidos[ultraDerecho] > 90){
+    sentidoGiro = -1;
+    Frenar(30);
+    estado = e::Girando;
+  }else Frenar(15);
+  break;
+
 
  case e::DecidiendoGiro:
- 
-  if(medidasUltrasonidos[ultraIzquierdo] > 90){
-    estado = e::ManiobraIzquierda1;
-  }else if(medidasUltrasonidos[ultraDerecho] > 90){
-    estado = e::ManiobraDerecha1;
-  }else{
+  setVelocidad(13);
+  if (medidasUltrasonidos[ultraCentral] <= 45){
     setVelocidad(0);
-    delay(20);
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-13);
-    estado = e::Atras;
+    if (PrimeraParada){
+      prev_ms5 = millis() + 250;
+      PrimeraParada = false;
+    }
+    if (millis()> prev_ms5) {
+      PrimeraParada = true;
+      MarcaEncoder = medidaencoder;
+      setVelocidad(-20);
+      estado = e::Atras;
+  }
+  }
+  else if(medidasUltrasonidos[ultraIzquierdo] > 90){
+    estado = e::Girando;
+  }else if(medidasUltrasonidos[ultraDerecho] > 90){
+    estado = e::Girando;
   }
   break;
 
-  case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 300){
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(13);
-      estado = e::Inicio;
-    }
+ case e::Girando:
+  if(GiroRealizado){
+    direccionObjetivo = sentidoGiro*90*vuelta;
+    vuelta++;
+    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+    GiroRealizado = false;
+    giros++;
+  }
+  if(abs(ErrorDireccionActual) < 10){
+    GiroRealizado = true;
+    MarcaEncoder = medirEncoder();
+    estado = e::RectoRapido;
+  }
+
   break;
 
  case e::Final:
@@ -457,163 +389,28 @@ void loop() {
   }
   break;
 
- case e::ParadaNoSeQueMasHacer:
-  setVelocidad(0);
-  estado = e::DecidiendoGiro;
-  break;
 
- case e::EsquivarDerecha1:
-  if ((MarcaEncoder - medidaencoder) >= 50 ){
-    direccionObjetivo = direccionObjetivo - 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(0);
-    delay(20);
-    setVelocidad(13);
-    estado = e::EsquivarDerecha2;
-  }
-  break;
-
- case e::EsquivarDerecha2:
-   
-  if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo + 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    estado = e::EsquivarDerecha3;
-  }
-  break;
-  
-  case e::EsquivarDerecha3:
-   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo -40;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(13);
-    estado = e::Inicio;//maniobra
+ case e::Atras:
+  if((MarcaEncoder - medidaencoder) >= 190){
+   setVelocidad(0);
+   MarcaEncoder=medidaencoder + 1000;
+   if (SegundaParada){
+    prev_ms6 = millis() + 250;
+    SegundaParada = false;
    }
-
-  break;
-
-  case e::EsquivarIzquierda1:
-    
-    if ((MarcaEncoder - medidaencoder) >= 20 ){
-    direccionObjetivo = direccionObjetivo + 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(0);
-    delay(20);
-    setVelocidad(13);
-
-    estado = e::EsquivarIzquierda2;
-  }
-
-  break;
-
-  case e::EsquivarIzquierda2:
-   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo - 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    estado = e::EsquivarIzquierda3;
-  }
-
-  break;
-
-  case e::EsquivarIzquierda3:
-   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo + 40;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(13);
-    estado = e::Inicio;
+   if (millis()> prev_ms6) {
+    SegundaParada = true;
+    enviarMensaje(66666666);
+    if (sentidoGiro==0){
+      estado= e::DecidiendoGiro;
+    }else{
+      setVelocidad(20);
+      estado = e::Girando;
+      enviarMensaje(66666667);
+    }
    }
+  }
   break;
-
-  case e::Parado:
-    setVelocidad(0);
-    break;
-
-  case e::ManiobraDerecha1:
-    AutoGiro = false;
-    setGiro(23);
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-10);
-    estado = e::ManiobraDerecha2;
-
-  break;
-
-  case e::ManiobraDerecha2:
-    if((medidaencoder - MarcaEncoder)<-275){
-      setVelocidad(0);
-      direccionObjetivo = direccionObjetivo - 90;
-      AutoGiro = true;
-      setVelocidad(13);
-      estado = e::ManiobraDerecha3;
-    }  
-  break;
-
-  case e::ManiobraDerecha3:
-    if(abs(ErrorDireccionActual) <= 20){
-      setVelocidad(0);
-      AutoGiro = false;
-      MarcaEncoder = medidaencoder;
-      setGiro(+5);
-      setVelocidad(-10);
-      estado = e::ManiobraDerecha4;
-    }
-  break;
-
-  case e::ManiobraDerecha4:
-    if((medidaencoder - MarcaEncoder)<-500){
-      setVelocidad(0);
-      AutoGiro = true;
-      setVelocidad(13);
-      estado = e::Inicio;
-    }
-  break;
-  
-    
-  case e::ManiobraIzquierda1:
-    AutoGiro = false;
-    setGiro(-23);
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-10);
-    estado = e::ManiobraIzquierda2;
-
-  break;
-
-  case e::ManiobraIzquierda2:
-    if((medidaencoder - MarcaEncoder)<-275){
-      setVelocidad(0);
-      direccionObjetivo = direccionObjetivo + 90;
-      AutoGiro = true;
-      setVelocidad(13);
-      estado = e::ManiobraIzquierda3;
-    }  
-  break;
-
-  case e::ManiobraIzquierda3:
-    if(abs(ErrorDireccionActual) <= 20){
-      setVelocidad(0);
-      AutoGiro = false;
-      MarcaEncoder = medidaencoder;
-      setGiro(-5);
-      setVelocidad(-10);
-      estado = e::ManiobraIzquierda4;
-    }
-  break;
-
-  case e::ManiobraIzquierda4:
-    if((medidaencoder - MarcaEncoder)<-500){
-      setVelocidad(0);
-      AutoGiro = true;
-      setVelocidad(13);
-      estado = e::Inicio;
-    }
-  break;
-
- }
-
+}
 
 }
