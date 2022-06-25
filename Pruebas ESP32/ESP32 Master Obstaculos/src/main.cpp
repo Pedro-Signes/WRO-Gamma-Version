@@ -66,7 +66,7 @@ enum e{
   Recto,
   EsquivarDerecha1,
   EsquivarIzquierda1,
-  ManiobraIzquierda,
+  ManiobraIzquierda1,
   Final,
   DecidiendoGiro,
   DecidiendoGiroPrimero,
