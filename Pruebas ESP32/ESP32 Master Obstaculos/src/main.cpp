@@ -19,6 +19,9 @@ WebServer server(80);
 #define tamanoMinimodeEsquive 55
 #define PIN_BOTON 13
 
+#define GreenSignature 1
+#define RedSignature 2
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -256,7 +259,7 @@ void enviarMensaje(int numero){
   Udp.endPacket();
 }*/
 
-/*
+
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -288,7 +291,7 @@ void EnviarTelemetria(){
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
- }*/
+ }
 
 void loop() {
   static uint32_t prev_ms = millis();
@@ -337,7 +340,7 @@ void loop() {
     }
   }
   if (tamano > tamanoMinimodeEsquive){
-    if(pixy.ccc.blocks[mayor].m_signature == 1)
+    if(pixy.ccc.blocks[mayor].m_signature == GreenSignature) //Bloque de esquivar izquierda
     {
       setVelocidad(0);
       delay(50);
@@ -348,7 +351,7 @@ void loop() {
       MarcaEncoder=medidaencoder;
       estado = e::EsquivarIzquierda1;
     }
-    else if (pixy.ccc.blocks[mayor].m_signature == 2)
+    else if (pixy.ccc.blocks[mayor].m_signature == RedSignature) //Bloque de esquivar derecha
     {
       setVelocidad(0);
       delay(50);
