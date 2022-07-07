@@ -17,16 +17,17 @@ IPAddress subnet(255, 255, 255, 0);
 WebServer server(80);
 
 #define tamanoMinimodeEsquive 55
-#define PIN_BOTON 13
-
 #define GreenSignature 1
 #define RedSignature 2
+
+#define PIN_BOTON 13
 
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
 int giros = 0;
 uint32_t Duracion_de_la_muestra = 0;
+
 MPU9250 mpu;
 Pixy2 pixy;
 
@@ -41,7 +42,6 @@ int PosicionX2;
 int PosicionY2;
 int Altura2;
 int Anchura2;
-
 
 int sentidoGiro = 0;
 
@@ -300,7 +300,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           setGiro(ErrorDireccionActual);}
@@ -363,6 +363,9 @@ void loop() {
       estado = e::EsquivarDerecha1;
     }
 
+  }
+  if(medidasUltrasonidos[ultraCentral] < 30){
+    estado = e::DecidiendoGiro;
   }
   if(medidasUltrasonidos[ultraCentral]<15){
     estado = e::ParadaNoSeQueMasHacer;
@@ -433,7 +436,7 @@ void loop() {
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
     setVelocidad(13);
-    estado = e::Inicio;//maniobra
+    estado = e::Inicio;
    }
 
   break;
