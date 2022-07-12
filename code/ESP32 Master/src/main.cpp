@@ -21,20 +21,7 @@ float valorBrujula = 0;
 float offset;
 int vuelta = 1;
 int giros = 0;
-uint32_t Duracion_de_la_muestra = 0;
-MPU9250 mpu;
-
 int sentidoGiro = 0;
-
-long solicitudEncoder();
-byte medidasUltrasonidos[4];
-byte ultraCentral = 0;            //Central = Trasero
-byte ultraIzquierdo = 1;
-byte ultraDerecho = 2;
-byte ultraTrasero = 3;
-
-long medidaencoder = 0;
-long MarcaEncoder = 0;
 
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
@@ -43,6 +30,20 @@ int direccionObjetivo = 0;
 bool GiroRealizado = true;
 bool PrimeraParada = true;
 bool SegundaParada = true;
+
+uint32_t Duracion_de_la_muestra = 0;
+MPU9250 mpu;
+
+long solicitudEncoder();
+byte medidasUltrasonidos[4];
+byte ultraFrontal = 0;
+byte ultraIzquierdo = 1;
+byte ultraDerecho = 2;
+byte ultraTrasero = 3;
+
+long medidaencoder = 0;
+long MarcaEncoder = 0;
+
 
 enum e{
   RectoRapido,
@@ -140,7 +141,7 @@ void medirUltrasonidos(){
 
 uint32_t prev_ms5;
 void Frenar(byte distancia){
-  if (medidasUltrasonidos[ultraCentral] <= distancia){
+  if (medidasUltrasonidos[ultraFrontal] <= distancia){
     setVelocidad(0);
     if (PrimeraParada){
       prev_ms5 = millis() + 400;
@@ -160,8 +161,8 @@ void setup() {
   server.begin();
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
-
   pinMode(LED_BUILTIN,OUTPUT);
+
   Wire.begin();
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
@@ -186,7 +187,6 @@ void setup() {
     setting.accel_fchoice = 0x01;
     setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
   while(!mpu.setup(0x68,setting,Wire1)) {  // change to your own address
-      Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
       delay(1000);
       digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
     }
@@ -225,17 +225,19 @@ void enviarMensaje(int numero){
   Udp.endPacket();
 }*/
 
-/*
+
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
     Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+  Udp.printf(String(medidasUltrasonidos[ultraFrontal]).c_str());
   Udp.printf(";");
   Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
   Udp.printf(";");
   Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+  Udp.printf(";");
+  Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
   Udp.printf(";");
   Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
   Udp.printf(";");
@@ -257,7 +259,7 @@ void EnviarTelemetria(){
   Udp.endPacket();
   prev_ms4 = millis() + 10;
   }
- }*/
+ }
 
 void loop() {
   
@@ -267,7 +269,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;
@@ -296,7 +298,7 @@ void loop() {
  {
  case e::Inico:
   setVelocidad(20);
-  if(medidasUltrasonidos[ultraCentral] < 90){
+  if(medidasUltrasonidos[ultraFrontal] < 90){
     estado = e::DecidiendoGiroPrimero;
   }
   break;
@@ -314,7 +316,7 @@ void loop() {
 
  case e::RectoLento:
   setVelocidad(17);
-  if(medidasUltrasonidos[ultraCentral] < 90){
+  if(medidasUltrasonidos[ultraFrontal] < 90){
         estado = e::DecidiendoGiro;
       }
   break;
@@ -336,7 +338,7 @@ void loop() {
 
  case e::DecidiendoGiro:
   setVelocidad(13);
-  if (medidasUltrasonidos[ultraCentral] <= 45){
+  if (medidasUltrasonidos[ultraFrontal] <= 45){
     setVelocidad(0);
     if (PrimeraParada){
       prev_ms5 = millis() + 250;
