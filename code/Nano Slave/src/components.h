@@ -2,13 +2,13 @@
 
 #define servoMAX 67
 #define servoMIN 13
+#define kp 0.3
+#define kd 3
 
 #define PinConServo 9
 #define PinEnMotor 5
 #define PinDir1Motor 16
 #define PinDir2Motor 17
-#define kp 0.3
-#define kd 3
 
 bool forward = true;
 

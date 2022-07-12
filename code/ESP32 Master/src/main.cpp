@@ -27,10 +27,11 @@ MPU9250 mpu;
 int sentidoGiro = 0;
 
 long solicitudEncoder();
-byte medidasUltrasonidos[3];
-byte ultraDerecho = 2;
-byte ultraCentral = 0;
+byte medidasUltrasonidos[4];
+byte ultraCentral = 0;            //Central = Trasero
 byte ultraIzquierdo = 1;
+byte ultraDerecho = 2;
+byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
@@ -129,7 +130,7 @@ void medirUltrasonidos(){
   Wire.beginTransmission(4);
   Wire.write(2);
   Wire.endTransmission();
-  Wire.requestFrom(4,3);
+  Wire.requestFrom(4,4);
   byte iteracion = 0;
   while (Wire.available()){
     medidasUltrasonidos[iteracion] = Wire.read();
@@ -388,13 +389,11 @@ void loop() {
    }
    if (millis()> prev_ms6) {
     SegundaParada = true;
-    //enviarMensaje(66666666);
     if (sentidoGiro==0){
       estado= e::DecidiendoGiro;
     }else{
       setVelocidad(20);
       estado = e::Girando;
-      //enviarMensaje(66666667);
     }
    }
   }
