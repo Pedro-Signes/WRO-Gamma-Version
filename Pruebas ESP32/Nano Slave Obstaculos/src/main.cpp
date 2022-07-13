@@ -5,15 +5,16 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PinEncoder 2
-#define PinTriggerI 3
-#define PinEchoI 8
-#define PinTriggerD 7
-#define PinEchoD 6
-#define PinTriggerC 11
-#define PinEchoC 4
+#define PinTriggerI 3     //Izquierdo
+#define PinEchoI 8        //Izquierdo
+#define PinTriggerD 7     //Derecha
+#define PinEchoD 6        //Derecha
+#define PinTriggerF 11    //Frontal
+#define PinEchoF 4        //Frontal
+#define PinTriggerT 14    //Trasero
+#define PinEchoT 16       //Trasero
 #define PinLed 12
 #define PinEnable 14
-
 
 #define NUMPIXELS 8
 #define DELAYVAL 50
@@ -27,9 +28,10 @@ float offset;
 volatile float velocidad;
 float face = 0;
 byte datoEncoder[4];
-int distanceCentral;
+int distanceFrontal;
 int distanceIzquierdo;
 int distanceDerecho;
+int distanceTrasero;
 int velocidadObjetivo;
 int encodertotal = 0;
 uint32_t tiempo = 0;
@@ -42,22 +44,7 @@ uint8_t medidaArray[3];
 
 CServo MiCServo(PinConServo);
 Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
-Ultrasonic UltrasonidoI(PinTriggerI, PinEchoI);
-Ultrasonic UltrasonidoII(PinTriggerD,PinEchoD);
 Adafruit_NeoPixel pixels(NUMPIXELS, PinLed, NEO_GRB + NEO_KHZ400);
-
-
-
-void autoTurn(){
-  if (UltrasonidoI.read(CM)>60){
-    MiCServo.MoverServo(90);
-    face = face +90;
-  };
-  if (UltrasonidoII.read(CM)>60){
-    MiCServo.MoverServo(-90);
-    face = face -90;
-  }
-};
 
 void encoderISR() {  // función para que funcien el encoder
   if (forward == true) 
@@ -74,16 +61,18 @@ void encoderISR() {  // función para que funcien el encoder
 }
 
 
-Ultrasonic ultrasonicCentral(11,4,10000UL);//central
-Ultrasonic ultrasonicIzquierdo(3,8,10000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(7,6,10000UL);//derechos
+Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
+Ultrasonic ultrasonicAtras(PinTriggerT,PinEchoT,10000UL);//Trasero
 
 void setup() {
   pinMode(PinEnable,OUTPUT);
   digitalWrite(PinEnable,1);
-  MiCServo.Setup();
   pinMode(PinEncoder, INPUT);
   attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+
+  MiCServo.Setup();
 
   Wire.begin(4);                // join i2c bus with address #4
   Wire.onReceive(receiveEvent); // register event
@@ -104,7 +93,7 @@ void setup() {
   pixels.show();
 
   MiCServo.MoverServo(0);
-  Serial.println("Configurando interrupciones");
+
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
   TCCR2B = 0;                 // Reset entire TCCR1B to 0
@@ -113,28 +102,24 @@ void setup() {
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
 
-  Serial.println("Todo funcionando");
-
 }
 
 void LecturaUltrasonidos();
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //Serial.print(velocidad);
-  //Serial.print(" ");
-  //Serial.println(MiMotor.GetPotencia());
+  //put your main code here, to run repeatedly:
   if (millis() > tiempo){
     LecturaUltrasonidos();
     tiempo = millis() + 5;
   }
 
+  if (millis() > tiempo){
+    MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
+    tiempo = millis() + 15;
+  }
   
-
-  MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
-  delay(16);
 }
-  
+
 
 void receiveEvent(int howMany) {
 
@@ -170,9 +155,10 @@ void requestEvent() {
     Wire.write(datoEncoder,4);
   }
   else if (requestedData == 2){
-    Wire.write(distanceCentral);
+    Wire.write(distanceFrontal);
     Wire.write(distanceIzquierdo);
     Wire.write(distanceDerecho);
+    Wire.write(distanceTrasero);
   }
 
 }
@@ -190,7 +176,7 @@ ISR(TIMER2_COMPB_vect){
 }
 
 void LecturaUltrasonidos(){
-  distanceCentral=ultrasonicCentral.read();
+  distanceFrontal=ultrasonicFrontal.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
   distanceDerecho=ultrasonicDerecho.read();
 }

@@ -26,33 +26,7 @@ float valorBrujula = 0;
 float offset;
 int vuelta = 1;
 int giros = 0;
-uint32_t Duracion_de_la_muestra = 0;
-
-MPU9250 mpu;
-Pixy2 pixy;
-
-int Color1;
-int PosicionX1;
-int PosicionY1;
-int Altura1;
-int Anchura1;
-
-int Color2;
-int PosicionX2;
-int PosicionY2;
-int Altura2;
-int Anchura2;
-
 int sentidoGiro = 0;
-
-long solicitudEncoder();
-byte medidasUltrasonidos[3];
-byte ultraDerecho = 2;
-byte ultraCentral = 0;
-byte ultraIzquierdo = 1;
-
-long medidaencoder = 0;
-long MarcaEncoder = 0;
 
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
@@ -62,6 +36,21 @@ bool GiroRealizado = true;
 bool PrimeraParada = true;
 bool SegundaParada = true;
 bool AutoGiro = true;
+
+uint32_t Duracion_de_la_muestra = 0;
+
+MPU9250 mpu;
+Pixy2 pixy;
+
+long solicitudEncoder();
+byte medidasUltrasonidos[4];
+byte ultraFrontal = 0;
+byte ultraIzquierdo = 1;
+byte ultraDerecho = 2;
+byte ultraTrasero = 3;
+
+long medidaencoder = 0;
+long MarcaEncoder = 0;
 
 enum e{
   EsquivarDerecha1,
@@ -163,7 +152,7 @@ void medirUltrasonidos(){
   Wire.beginTransmission(4);
   Wire.write(2);
   Wire.endTransmission();
-  Wire.requestFrom(4,3);
+  Wire.requestFrom(4,4);
   byte iteracion = 0;
   while (Wire.available()){
     medidasUltrasonidos[iteracion] = Wire.read();
@@ -173,7 +162,7 @@ void medirUltrasonidos(){
 
 uint32_t prev_ms5;
 void Frenar(byte distancia){
-  if (medidasUltrasonidos[ultraCentral] <= distancia){
+  if (medidasUltrasonidos[ultraFrontal] <= distancia){
     setVelocidad(0);
     if (PrimeraParada){
       prev_ms5 = millis() + 400;
@@ -265,7 +254,7 @@ void EnviarTelemetria(){
   if (millis()> prev_ms4) {
     Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
     // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-    Udp.printf(String(medidasUltrasonidos[ultraCentral]).c_str());
+    Udp.printf(String(medidasUltrasonidos[ultraFrontal]).c_str());
     Udp.printf(";");
     Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
     Udp.printf(";");
@@ -364,10 +353,10 @@ void loop() {
     }
 
   }
-  if(medidasUltrasonidos[ultraCentral] < 30){
+  if(medidasUltrasonidos[ultraFrontal] < 30){
     estado = e::DecidiendoGiro;
   }
-  if(medidasUltrasonidos[ultraCentral]<15){
+  if(medidasUltrasonidos[ultraFrontal]<15){
     estado = e::ParadaNoSeQueMasHacer;
   }
   
