@@ -64,7 +64,7 @@ void encoderISR() {  // función para que funcien el encoder
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
 Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
-Ultrasonic ultrasonicAtras(PinTriggerT,PinEchoT,10000UL);//Trasero
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
 
 void setup() {
   pinMode(PinEnable,OUTPUT);
@@ -179,4 +179,5 @@ void LecturaUltrasonidos(){
   distanceFrontal=ultrasonicFrontal.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
   distanceDerecho=ultrasonicDerecho.read();
+  distanceTrasero=ultrasonicTrasero.read();
 }
