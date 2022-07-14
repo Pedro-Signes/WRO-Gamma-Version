@@ -11,36 +11,37 @@
 #define PinEchoD 6        //Derecha
 #define PinTriggerF 11    //Frontal
 #define PinEchoF 4        //Frontal
-#define PinTriggerT 14    //Trasero
-#define PinEchoT 16       //Trasero
+#define PinTriggerT 13    //Trasero
+#define PinEchoT 15       //Trasero
 #define PinLed 12
 #define PinEnable 14
 
 #define NUMPIXELS 8
 #define DELAYVAL 50
 
-volatile long encoder = 0;
-volatile long encoderAbsoluto = 0;
-bool lecturaEncoder = false;
 int vuelta = 1;
 //float posicion_servo = 0;
 float offset;
 volatile float velocidad;
 float face = 0;
+
+volatile long encoder = 0;
+volatile long encoderAbsoluto = 0;
+bool lecturaEncoder = false;
+int encodertotal = 0;
+
 byte datoEncoder[4];
 int distanceFrontal;
 int distanceIzquierdo;
 int distanceDerecho;
 int distanceTrasero;
 int velocidadObjetivo;
-int encodertotal = 0;
+
 uint32_t tiempo = 0;
 
 void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
-
-uint8_t medidaArray[3];
 
 CServo MiCServo(PinConServo);
 Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
@@ -64,7 +65,7 @@ void encoderISR() {  // función para que funcien el encoder
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
 Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
-Ultrasonic ultrasonicAtras(PinTriggerT,PinEchoT,10000UL);//Trasero
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
 
 void setup() {
   pinMode(PinEnable,OUTPUT);
@@ -102,9 +103,9 @@ void setup() {
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
 
+  void LecturaUltrasonidos();
+  
 }
-
-void LecturaUltrasonidos();
 
 void loop() {
   //put your main code here, to run repeatedly:
@@ -179,4 +180,5 @@ void LecturaUltrasonidos(){
   distanceFrontal=ultrasonicFrontal.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
   distanceDerecho=ultrasonicDerecho.read();
+  distanceTrasero=ultrasonicTrasero.read();
 }

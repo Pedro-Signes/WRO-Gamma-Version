@@ -236,19 +236,19 @@ void setup() {
   while (digitalRead(PIN_BOTON));
   delay(1000);
 
-  setVelocidad(13);
+  //setVelocidad(13);
 
 }
 
-/*
+
 void enviarMensaje(int numero){
   Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
-}*/
+}
 
-
+/*
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -259,6 +259,8 @@ void EnviarTelemetria(){
     Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
     Udp.printf(";");
     Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
+    Udp.printf(";");
+    Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
     Udp.printf(";");
     Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
     Udp.printf(";");
@@ -280,7 +282,7 @@ void EnviarTelemetria(){
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
- }
+ }*/
 
 void loop() {
   static uint32_t prev_ms = millis();
@@ -289,7 +291,8 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
+      //EnviarTelemetria();
+      enviarMensaje(medidasUltrasonidos[ultraTrasero]);
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           setGiro(ErrorDireccionActual);}
