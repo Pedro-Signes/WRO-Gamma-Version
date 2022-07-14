@@ -11,8 +11,8 @@
 #define PinEchoD 6        //Derecha
 #define PinTriggerF 11    //Frontal
 #define PinEchoF 4        //Frontal
-#define PinTriggerT 14    //Trasero
-#define PinEchoT 16       //Trasero
+#define PinTriggerT 13    //Trasero
+#define PinEchoT 15       //Trasero
 #define PinLed 12
 #define PinEnable 14
 
