@@ -236,19 +236,19 @@ void setup() {
   while (digitalRead(PIN_BOTON));
   delay(1000);
 
-  //setVelocidad(13);
+  setVelocidad(13);
 
 }
 
-
+/*
 void enviarMensaje(int numero){
   Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
-}
+}*/
 
-/*
+
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -282,7 +282,7 @@ void EnviarTelemetria(){
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
- }*/
+ }
 
 void loop() {
   static uint32_t prev_ms = millis();
@@ -291,8 +291,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
-      enviarMensaje(medidasUltrasonidos[ultraTrasero]);
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           setGiro(ErrorDireccionActual);}
@@ -368,8 +367,12 @@ void loop() {
  case e::DecidiendoGiro:
  
   if(medidasUltrasonidos[ultraIzquierdo] > 90){
+    setVelocidad(0);
+    delay(20);
     estado = e::ManiobraIzquierda1;
   }else if(medidasUltrasonidos[ultraDerecho] > 90){
+    setVelocidad(0);
+    delay(20);
     estado = e::ManiobraDerecha1;
   }else{
     setVelocidad(0);
@@ -482,17 +485,17 @@ void loop() {
   break;
 
   case e::ManiobraDerecha2:
-    if((medidaencoder - MarcaEncoder)<-275){
+    if((medidaencoder - MarcaEncoder)<-325){
       setVelocidad(0);
       direccionObjetivo = direccionObjetivo - 90;
       AutoGiro = true;
-      setVelocidad(13);
+      setVelocidad(20);
       estado = e::ManiobraDerecha3;
     }  
   break;
 
   case e::ManiobraDerecha3:
-    if(abs(ErrorDireccionActual) <= 20){
+    if((abs(ErrorDireccionActual) <= 20) || (medidasUltrasonidos[ultraFrontal] <= 15)){
       setVelocidad(0);
       AutoGiro = false;
       MarcaEncoder = medidaencoder;
@@ -503,10 +506,10 @@ void loop() {
   break;
 
   case e::ManiobraDerecha4:
-    if((medidaencoder - MarcaEncoder)<-500){
+    if(medidasUltrasonidos[ultraTrasero] <= 15){
       setVelocidad(0);
       AutoGiro = true;
-      setVelocidad(13);
+      setVelocidad(20);
       estado = e::Inicio;
     }
   break;
@@ -516,23 +519,23 @@ void loop() {
     AutoGiro = false;
     setGiro(-23);
     MarcaEncoder = medidaencoder;
-    setVelocidad(-10);
+    setVelocidad(-15);
     estado = e::ManiobraIzquierda2;
 
   break;
 
   case e::ManiobraIzquierda2:
-    if((medidaencoder - MarcaEncoder)<-275){
+    if((medidaencoder - MarcaEncoder)<-325){
       setVelocidad(0);
       direccionObjetivo = direccionObjetivo + 90;
       AutoGiro = true;
-      setVelocidad(13);
+      setVelocidad(20);
       estado = e::ManiobraIzquierda3;
     }  
   break;
 
   case e::ManiobraIzquierda3:
-    if(abs(ErrorDireccionActual) <= 20){
+    if((abs(ErrorDireccionActual) <= 20) || (medidasUltrasonidos[ultraFrontal] <= 15)){
       setVelocidad(0);
       AutoGiro = false;
       MarcaEncoder = medidaencoder;
@@ -543,10 +546,10 @@ void loop() {
   break;
 
   case e::ManiobraIzquierda4:
-    if((medidaencoder - MarcaEncoder)<-500){
+    if(medidasUltrasonidos[ultraTrasero] <= 15){
       setVelocidad(0);
       AutoGiro = true;
-      setVelocidad(13);
+      setVelocidad(20);
       estado = e::Inicio;
     }
   break;

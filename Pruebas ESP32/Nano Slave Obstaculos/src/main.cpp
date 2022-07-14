@@ -39,6 +39,7 @@ int velocidadObjetivo;
 
 uint32_t tiempo = 0;
 
+
 void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
@@ -61,7 +62,7 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
-
+void LecturaUltrasonidos();
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
 Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
@@ -104,7 +105,7 @@ void setup() {
   sei(); 
 
   void LecturaUltrasonidos();
-  
+
 }
 
 void loop() {
