@@ -279,6 +279,8 @@ void EnviarTelemetria(){
     Udp.printf(String(giros).c_str());
     Udp.printf(";");
     Udp.printf(String(sentidoGiro).c_str());
+    Udp.printf(";");
+    Udp.printf(String(pixy.ccc.numBlocks).c_str());
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
@@ -358,7 +360,7 @@ void loop() {
   if(medidasUltrasonidos[ultraFrontal] < 30){
     estado = e::DecidiendoGiro;
   }
-  if(medidasUltrasonidos[ultraFrontal]<15){
+  if(medidasUltrasonidos[ultraFrontal]<10){
     estado = e::ParadaNoSeQueMasHacer;
   }
   
