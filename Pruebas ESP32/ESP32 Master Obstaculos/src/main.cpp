@@ -26,7 +26,8 @@ float valorBrujula = 0;
 float offset;
 int vuelta = 1;
 int giros = 0;
-int sentidoGiro = 0;
+bool sentidoGiro = true;
+bool LecturaGiro = true;
 
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
@@ -53,13 +54,15 @@ long medidaencoder = 0;
 long MarcaEncoder = 0;
 
 enum e{
-  EsquivarDerecha1,
-  EsquivarIzquierda1,
-  Final,
-  DecidiendoGiro,
   Inicio,
-  Atras,
   DecidiendoBloque,
+  EsquivarDerecha1,
+  EsquivarDerecha2,
+  EsquivarDerecha3,
+  EsquivarIzquierda1,
+  EsquivarIzquierda2,
+  EsquivarIzquierda3,
+  DecidiendoGiro,
   ManiobraDerecha1,
   ManiobraDerecha2,
   ManiobraDerecha3,
@@ -68,12 +71,9 @@ enum e{
   ManiobraIzquierda2,
   ManiobraIzquierda3,
   ManiobraIzquierda4,
-  EsquivarDerecha2,
-  EsquivarIzquierda2,
-  EsquivarDerecha3,
-  EsquivarIzquierda3,
   ParadaNoSeQueMasHacer,
-  Parado
+  Atras,
+  Final
 };
 
 int estado = e::Inicio;
@@ -262,15 +262,15 @@ void EnviarTelemetria(){
     Udp.printf(";");
     Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
     Udp.printf(";");
-    Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-    Udp.printf(";");
     Udp.printf(String(estado).c_str());
+    Udp.printf(";");
+    Udp.printf(String(medidaencoder).c_str());
+    Udp.printf(";");
+    Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
     Udp.printf(";");
     Udp.printf(String(90*vuelta).c_str());
     Udp.printf(";");
     Udp.printf(String(valorBrujula).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder).c_str());
     Udp.printf(";");
     Udp.printf(String(ErrorDireccionAnterior).c_str());
     Udp.printf(";");
@@ -363,25 +363,54 @@ void loop() {
   if(medidasUltrasonidos[ultraFrontal]<10){
     estado = e::ParadaNoSeQueMasHacer;
   }
+
+  if(LecturaGiro)
+  {
+    //Leer la camara y poner la direccion del giro
+    if(pixy.ccc.numBlocks){
+      for (int i=0; i < pixy.ccc.numBlocks; i++){
+        if(pixy.ccc.blocks[i].m_signature == 3){
+          sentidoGiro = false;
+          LecturaGiro = false;
+        }
+        if (pixy.ccc.blocks[i].m_signature == 4){
+          sentidoGiro = true;
+          LecturaGiro = false;
+        }
+      }
+    }
+  }
   
   break;
 
  case e::DecidiendoGiro:
- 
-  if(medidasUltrasonidos[ultraIzquierdo] > 90){
-    setVelocidad(0);
-    delay(20);
-    estado = e::ManiobraIzquierda1;
-  }else if(medidasUltrasonidos[ultraDerecho] > 90){
-    setVelocidad(0);
-    delay(20);
-    estado = e::ManiobraDerecha1;
-  }else{
-    setVelocidad(0);
-    delay(20);
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-13);
-    estado = e::Atras;
+  if (LecturaGiro){
+    if(medidasUltrasonidos[ultraIzquierdo] > 90){
+      setVelocidad(0);
+      delay(20);
+      estado = e::ManiobraIzquierda1;
+    }else if(medidasUltrasonidos[ultraDerecho] > 90){
+      setVelocidad(0);
+      delay(20);
+      estado = e::ManiobraDerecha1;
+    }else{
+      setVelocidad(0);
+      delay(20);
+      MarcaEncoder = medidaencoder;
+      setVelocidad(-13);
+      estado = e::Atras;
+    }
+  }
+  else{
+    if (sentidoGiro){
+      setVelocidad(0);
+      delay(20);
+      estado = e::ManiobraDerecha1;
+    } else {
+      setVelocidad(0);
+      delay(20);
+      estado = e::ManiobraIzquierda1;
+    }
   }
   break;
 
@@ -472,10 +501,6 @@ void loop() {
     estado = e::Inicio;
    }
   break;
-
-  case e::Parado:
-    setVelocidad(0);
-    break;
 
   case e::ManiobraDerecha1:
     AutoGiro = false;
