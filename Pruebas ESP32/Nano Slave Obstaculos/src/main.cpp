@@ -19,11 +19,7 @@
 #define NUMPIXELS 8
 #define DELAYVAL 50
 
-int vuelta = 1;
-//float posicion_servo = 0;
-float offset;
 volatile float velocidad;
-float face = 0;
 
 volatile long encoder = 0;
 volatile long encoderAbsoluto = 0;

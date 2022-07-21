@@ -22,11 +22,8 @@
 volatile long encoder = 0;
 volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
-int vuelta = 1;
 //float posicion_servo = 0;
-float offset;
 volatile float velocidad;
-float face = 0;
 byte datoEncoder[4];
 int distanceFrontal;
 int distanceIzquierdo;
@@ -60,7 +57,6 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
-
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
 Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
@@ -83,9 +79,7 @@ void setup() {
   pixels.begin();
   delay(100);
   pixels.clear();
-  /*for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(255, 255, 255));
-  }*/
+  
   for(int i=0; i<NUMPIXELS; i++) {
 
     pixels.setPixelColor(i, pixels.Color(0, 0, 0));
@@ -97,16 +91,21 @@ void setup() {
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
   TCCR2B = 0;                 // Reset entire TCCR1B to 0
-  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024  
+  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024
   TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
 
+  //while(velocidadObjetivo==0){
+    
+  //}
 }
 
 void LecturaUltrasonidos();
 
 void loop() {
+
+  
   //put your main code here, to run repeatedly:
   if (millis() > tiempo){
     LecturaUltrasonidos();
@@ -176,8 +175,11 @@ ISR(TIMER2_COMPB_vect){
 }
 
 void LecturaUltrasonidos(){
+  if (forward) {
   distanceFrontal=ultrasonicFrontal.read();
   distanceIzquierdo=ultrasonicIzquierdo.read();
   distanceDerecho=ultrasonicDerecho.read();
+  } else {
   distanceTrasero=ultrasonicTrasero.read();
+  }
 }
