@@ -57,6 +57,18 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
+void colors(byte mainPixel, byte currentPixel){
+  if (mainPixel == currentPixel){
+    pixels.setPixelColor(currentPixel, pixels.Color(255,0,0));
+  }
+  else if (abs(currentPixel - mainPixel) == 1){
+    pixels.setPixelColor(currentPixel, pixels.Color(245,85,85));
+  }
+  else {
+    pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
+  }
+}
+
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
 Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
@@ -96,9 +108,24 @@ void setup() {
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
 
-  //while(velocidadObjetivo==0){
-    
-  //}
+  byte mainpixel = 0;
+  while(velocidadObjetivo==0){
+    for(int i=0; i<NUMPIXELS; i++) {
+      colors(mainpixel,i);
+    }
+    pixels.show();
+    delay(10);
+    if (mainpixel < NUMPIXELS){
+    mainpixel ++;}
+    else mainpixel = 0;
+  }
+
+  for(int i=0; i<NUMPIXELS; i++) {
+
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  }
+  pixels.show();
+
 }
 
 void LecturaUltrasonidos();
