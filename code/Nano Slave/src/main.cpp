@@ -22,14 +22,13 @@
 volatile long encoder = 0;
 volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
-//float posicion_servo = 0;
 volatile float velocidad;
 byte datoEncoder[4];
 int distanceFrontal;
 int distanceIzquierdo;
 int distanceDerecho;
 int distanceTrasero;
-int velocidadObjetivo;
+int velocidadObjetivo = 0;
 int encodertotal = 0;
 uint32_t tiempo = 0;
 
@@ -59,10 +58,10 @@ void encoderISR() {  // función para que funcien el encoder
 
 void colors(byte mainPixel, byte currentPixel){
   if (mainPixel == currentPixel){
-    pixels.setPixelColor(currentPixel, pixels.Color(255,0,0));
+    pixels.setPixelColor(currentPixel, pixels.Color(15,0,0));
   }
   else if (abs(currentPixel - mainPixel) == 1){
-    pixels.setPixelColor(currentPixel, pixels.Color(245,85,85));
+    pixels.setPixelColor(currentPixel, pixels.Color(4,2,2));
   }
   else {
     pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
@@ -91,12 +90,6 @@ void setup() {
   pixels.begin();
   delay(100);
   pixels.clear();
-  
-  for(int i=0; i<NUMPIXELS; i++) {
-
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-  }
-  pixels.show();
 
   MiCServo.MoverServo(0);
 
@@ -109,15 +102,19 @@ void setup() {
   sei(); 
 
   byte mainpixel = 0;
+  byte sense = 1;
   while(velocidadObjetivo==0){
     for(int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i);
     }
     pixels.show();
-    delay(10);
-    if (mainpixel < NUMPIXELS){
-    mainpixel ++;}
-    else mainpixel = 0;
+    delay(120);
+    if (mainpixel == NUMPIXELS - 1){
+    sense = -1;}
+    if (mainpixel == 0){
+      sense = 1;
+    }
+    mainpixel = mainpixel + sense;
   }
 
   for(int i=0; i<NUMPIXELS; i++) {
