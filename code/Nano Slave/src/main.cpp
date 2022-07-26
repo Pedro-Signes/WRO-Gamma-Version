@@ -40,7 +40,7 @@ uint8_t medidaArray[3];
 
 CServo MiCServo(PinConServo);
 Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
-Adafruit_NeoPixel pixels(NUMPIXELS, PinLed, NEO_GRB + NEO_KHZ400);
+Adafruit_NeoPixel pixels(NUMPIXELS, PinLed, NEO_GRB + NEO_KHZ800);
 
 void encoderISR() {  // función para que funcien el encoder
   if (forward == true) 
@@ -56,12 +56,15 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
-void colors(byte mainPixel, byte currentPixel){
+void colors(byte mainPixel, byte currentPixel, int sense){
   if (mainPixel == currentPixel){
-    pixels.setPixelColor(currentPixel, pixels.Color(15,0,0));
+    pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
   }
-  else if (abs(currentPixel - mainPixel) == 1){
-    pixels.setPixelColor(currentPixel, pixels.Color(4,2,2));
+  else if (((currentPixel - mainPixel) * sense) == -1){
+    pixels.setPixelColor(currentPixel, pixels.Color(12,0,0));
+  }
+  else if (((currentPixel - mainPixel) * sense) == -2){
+    pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
   }
   else {
     pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
@@ -74,6 +77,10 @@ Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
 Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
 
 void setup() {
+  pixels.begin();
+  delay(100);
+  pixels.clear();
+
   pinMode(PinEnable,OUTPUT);
   digitalWrite(PinEnable,1);
   pinMode(PinEncoder, INPUT);
@@ -87,10 +94,6 @@ void setup() {
 
   Serial.begin(115200);
 
-  pixels.begin();
-  delay(100);
-  pixels.clear();
-
   MiCServo.MoverServo(0);
 
   cli();
@@ -100,12 +103,12 @@ void setup() {
   TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
   OCR2B = 255;                //Finally we set compare register B to this value 
   sei(); 
-
+  
   byte mainpixel = 0;
-  byte sense = 1;
+  int sense = 1;
   while(velocidadObjetivo==0){
     for(int i=0; i<NUMPIXELS; i++) {
-      colors(mainpixel,i);
+      colors(mainpixel,i,sense);
     }
     pixels.show();
     delay(120);
@@ -119,7 +122,7 @@ void setup() {
 
   for(int i=0; i<NUMPIXELS; i++) {
 
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    pixels.setPixelColor(i, pixels.Color(100, 100, 100));
   }
   pixels.show();
 
