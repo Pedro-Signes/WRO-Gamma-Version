@@ -87,14 +87,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
 
   MiCServo.Setup();
+  MiCServo.MoverServo(0);
 
   Wire.begin(4);                // join i2c bus with address #4
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent); // register event
-
-  Serial.begin(115200);
-
-  MiCServo.MoverServo(0);
 
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
