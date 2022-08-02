@@ -76,6 +76,8 @@ Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
 Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
 Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
 
+void LecturaUltrasonidos();
+
 void setup() {
   pixels.begin();
   delay(100);
@@ -92,6 +94,8 @@ void setup() {
   Wire.begin(4);                // join i2c bus with address #4
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent); // register event
+
+  LecturaUltrasonidos();
 
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
@@ -124,8 +128,6 @@ void setup() {
   pixels.show();
 
 }
-
-void LecturaUltrasonidos();
 
 void loop() {
 
