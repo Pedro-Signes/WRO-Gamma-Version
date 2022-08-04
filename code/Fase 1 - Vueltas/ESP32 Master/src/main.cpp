@@ -155,10 +155,10 @@ void Frenar(byte distancia){
 }
 
 void setup() {
-
+/*
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_ip, gateway, subnet);
-  server.begin();
+  server.begin();*/
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
@@ -225,7 +225,7 @@ void enviarMensaje(int numero){
   Udp.endPacket();
 }*/
 
-
+/*
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -259,7 +259,7 @@ void EnviarTelemetria(){
   Udp.endPacket();
   prev_ms4 = millis() + 10;
   }
- }
+ }*/
 
 void loop() {
   
@@ -269,7 +269,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
+      //EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;

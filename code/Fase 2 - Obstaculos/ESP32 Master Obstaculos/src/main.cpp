@@ -19,8 +19,6 @@ WebServer server(80);
 #define tamanoMinimodeEsquive 55
 #define GreenSignature 1
 #define RedSignature 2
-#define OrangeSignature 3
-#define BlueSignature 4
 
 #define PIN_BOTON 13
 
@@ -59,6 +57,7 @@ bool forward = true;
 
 enum e{
   Inicio,
+  Recto,
   DecidiendoBloque,
   EsquivarDerecha1,
   EsquivarDerecha2,
@@ -172,6 +171,8 @@ void setup() {
   server.begin();
   pixy.init();
 
+  Serial.begin(115200);
+
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
   pinMode(LED_BUILTIN,OUTPUT);
@@ -227,16 +228,16 @@ void setup() {
 
   setVelocidad(13);
   delay(500);
-
 }
 
-/*
+
 void enviarMensaje(int numero){
   Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
   // Just test touch pin - Touch0 is T0 which is on GPIO 4.
   Udp.printf(String(numero).c_str());
   Udp.endPacket();
-}*/
+}
+
 
 
 void EnviarTelemetria(){
@@ -275,6 +276,8 @@ void EnviarTelemetria(){
     Udp.printf(String(pixy.ccc.numBlocks).c_str());
     Udp.printf(";");
     Udp.printf(String(pixy.ccc.blocks[0].m_signature).c_str());
+    Udp.printf(";");
+    Udp.printf(String(pixy.line.numVectors).c_str());
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
@@ -321,6 +324,17 @@ void loop() {
  {
  case e::Inicio:
   
+  if (medidaencoder >190){
+    setVelocidad(0);
+    if(pixy.changeProg("line_tracking") == 0){
+      estado = e::DecidiendoGiro;
+    }
+  } 
+  
+  break;
+
+  case e::Recto:
+
   if(pixy.ccc.numBlocks){
     for (int i=0; i < pixy.ccc.numBlocks; i++){
       if(pixy.ccc.blocks[i].m_height > tamano){
@@ -360,45 +374,33 @@ void loop() {
   if(medidasUltrasonidos[ultraFrontal] <= 10){
     estado = e::ParadaNoSeQueMasHacer;
   }
-
-  if(LecturaGiro)
-  {
-    //Leer la camara y establecer la direccion del giro
-    if(pixy.ccc.numBlocks){
-      for (int i=0; i < pixy.ccc.numBlocks; i++){
-        if(pixy.ccc.blocks[i].m_signature == 3){
-          sentidoGiro = true;
-          LecturaGiro = false;
-        }
-        if (pixy.ccc.blocks[i].m_signature == 4){
-          sentidoGiro = false;
-          LecturaGiro = false;
-        }
-      }
-    }
-  }
   
   break;
 
  case e::DecidiendoGiro:
   if (LecturaGiro){
-    if(medidasUltrasonidos[ultraIzquierdo] > 90){
-      setVelocidad(0);
-      delay(20);
-      estado = e::ManiobraIzquierda1;
-    }else if(medidasUltrasonidos[ultraDerecho] > 90){
-      setVelocidad(0);
-      delay(20);
-      estado = e::ManiobraDerecha1;
-    }else{
-      setVelocidad(0);
-      delay(20);
+    pixy.line.getMainFeatures();
+    enviarMensaje(8888);
+
+    if (pixy.line.numVectors){
+      enviarMensaje(9999);
+      int x0 = pixy.line.vectors->m_x0;
+      int y0 = pixy.line.vectors->m_y0;
+      int x1 = pixy.line.vectors->m_x1;
+      int y1 = pixy.line.vectors->m_y1;
+      float m = (y1 - y0) / (x1 - x0);
+      if (m < 
+      0){
+        sentidoGiro = true;
+      }else sentidoGiro = false;
+      LecturaGiro = false;
+      pixy.changeProg("color");
       MarcaEncoder = medidaencoder;
       setVelocidad(-15);
       estado = e::Atras;
     }
-  }
-  else{
+  }else {
+
     if (sentidoGiro){
       setVelocidad(0);
       delay(20);
@@ -412,11 +414,11 @@ void loop() {
   break;
 
   case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 300){
+    if ((MarcaEncoder - medidaencoder) >= 190){
       setVelocidad(0);
       delay(20);
-      setVelocidad(13);
-      estado = e::Inicio;
+      setVelocidad(17);
+      estado = e::Recto;
     }
   break;
 
@@ -459,7 +461,7 @@ void loop() {
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
     setVelocidad(13);
-    estado = e::Inicio;
+    estado = e::Recto;
    }
 
   break;
@@ -495,7 +497,7 @@ void loop() {
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
     setVelocidad(13);
-    estado = e::Inicio;
+    estado = e::Recto;
    }
   break;
 
@@ -535,7 +537,7 @@ void loop() {
       AutoGiro = true;
       setVelocidad(20);
       giros ++;
-      estado = e::Inicio;
+      estado = e::Recto;
     }
   break;
   
@@ -576,7 +578,7 @@ void loop() {
       AutoGiro = true;
       setVelocidad(20);
       giros ++;
-      estado = e::Inicio;
+      estado = e::Recto;
     }
   break;
 
