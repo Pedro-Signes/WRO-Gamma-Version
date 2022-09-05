@@ -98,14 +98,6 @@ void setup() {
   Wire.onRequest(requestEvent); // register event
 
   LecturaUltrasonidos();
-
-  cli();
-  TCCR2A = 0;                 // Reset entire TCCR1A to 0 
-  TCCR2B = 0;                 // Reset entire TCCR1B to 0
-  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024
-  TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
-  OCR2B = 255;                //Finally we set compare register B to this value 
-  sei(); 
   
   byte mainpixel = 0;
   int sense = 1;
@@ -132,6 +124,14 @@ void setup() {
   }
   pixels.show();
 
+  cli();
+  TCCR2A = 0;                 // Reset entire TCCR1A to 0 
+  TCCR2B = 0;                 // Reset entire TCCR1B to 0
+  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024
+  TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
+  OCR2B = 255;                //Finally we set compare register B to this value 
+  sei();
+  
 }
 
 void loop() {

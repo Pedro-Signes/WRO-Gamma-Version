@@ -326,7 +326,7 @@ void loop() {
   
   if (medidaencoder >190){
     setVelocidad(0);
-    if(pixy.changeProg("line_tracking") == 0){
+    if(pixy.changeProg("line") == 0){
       estado = e::DecidiendoGiro;
     }
   } 
@@ -379,15 +379,15 @@ void loop() {
 
  case e::DecidiendoGiro:
   if (LecturaGiro){
-    pixy.line.getMainFeatures();
+    pixy.line.getMainFeatures(LINE_VECTOR);
     enviarMensaje(8888);
 
     if (pixy.line.numVectors){
       enviarMensaje(9999);
-      int x0 = pixy.line.vectors->m_x0;
-      int y0 = pixy.line.vectors->m_y0;
-      int x1 = pixy.line.vectors->m_x1;
-      int y1 = pixy.line.vectors->m_y1;
+      int x0 = pixy.line.vectors[0].m_x0;
+      int y0 = pixy.line.vectors[0].m_y0;
+      int x1 = pixy.line.vectors[0].m_x1;
+      int y1 = pixy.line.vectors[0].m_y1;
       float m = (y1 - y0) / (x1 - x0);
       if (m < 
       0){
