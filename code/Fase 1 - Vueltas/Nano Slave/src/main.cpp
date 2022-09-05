@@ -32,6 +32,8 @@ int velocidadObjetivo = 0;
 int encodertotal = 0;
 uint32_t tiempo = 0;
 
+bool ESP_prepared = false;
+
 void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
@@ -107,9 +109,12 @@ void setup() {
   
   byte mainpixel = 0;
   int sense = 1;
-  while(velocidadObjetivo==0){
+  while(!ESP_prepared){
     for(int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i,sense);
+      if (ESP_prepared){
+        break;
+      }
     }
     pixels.show();
     delay(120);
@@ -164,7 +169,7 @@ void receiveEvent(int howMany) {
     }else if(requestedData == 5){
       int valor_enable = Wire.read();
       digitalWrite(PinEnable,valor_enable);
-
+      ESP_prepared = true;
     }
 
   }
