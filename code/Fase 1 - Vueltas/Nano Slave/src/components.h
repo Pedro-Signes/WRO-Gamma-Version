@@ -3,8 +3,8 @@
 #define servoMAX 116
 #define servoMIN 52
 #define servoO 84
-#define kp 0.1
-#define kd 1
+#define kp 0.3
+#define kd 2
 
 #define PinConServo 9
 #define PinEnMotor 5
