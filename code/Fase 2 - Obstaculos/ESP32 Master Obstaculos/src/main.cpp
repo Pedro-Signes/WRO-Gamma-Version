@@ -180,7 +180,6 @@ void setup() {
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
-  setEnable(1);
   estado = e::Inicio;
   
   //Calibrar();
@@ -218,13 +217,17 @@ void setup() {
     delay(5);
   }
   offset = tot/num;
-
+  pixy.changeProg("line");
   digitalWrite(LED_BUILTIN,HIGH);
 
-  setEnable(1);
+  
+
+  
 
   while (digitalRead(PIN_BOTON));
+  setEnable(1);
   delay(1000);
+
 
   setVelocidad(13);
   delay(500);
@@ -326,10 +329,8 @@ void loop() {
   
   if (medidaencoder >190){
     setVelocidad(0);
-    if(pixy.changeProg("line") == 0){
-      estado = e::DecidiendoGiro;
-    }
-  } 
+    estado = e::DecidiendoGiro;
+  }
   
   break;
 
@@ -381,26 +382,32 @@ void loop() {
   if (LecturaGiro){
     pixy.line.getMainFeatures(LINE_VECTOR);
     enviarMensaje(8888);
-
+    enviarMensaje(pixy.line.numVectors);
     if (pixy.line.numVectors){
       enviarMensaje(9999);
       int x0 = pixy.line.vectors[0].m_x0;
       int y0 = pixy.line.vectors[0].m_y0;
       int x1 = pixy.line.vectors[0].m_x1;
       int y1 = pixy.line.vectors[0].m_y1;
-      float m = (y1 - y0) / (x1 - x0);
-      if (m < 
-      0){
+      float m = (y1 - y0);
+      if (m < 0){
         sentidoGiro = true;
-      }else sentidoGiro = false;
+        enviarMensaje(1);
+      }else{
+        sentidoGiro = false;
+        enviarMensaje(-1);
+      }
       LecturaGiro = false;
-      pixy.changeProg("color");
       MarcaEncoder = medidaencoder;
+      if(pixy.changeProg("color") == 0){
+        enviarMensaje(2222);
+      }else{
+        enviarMensaje(3333);
+     }
       setVelocidad(-15);
       estado = e::Atras;
     }
   }else {
-
     if (sentidoGiro){
       setVelocidad(0);
       delay(20);
@@ -411,6 +418,7 @@ void loop() {
       estado = e::ManiobraIzquierda1;
     }
   }
+  delay(100);
   break;
 
   case e::Atras:

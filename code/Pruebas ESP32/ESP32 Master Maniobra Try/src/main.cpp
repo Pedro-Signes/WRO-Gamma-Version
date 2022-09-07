@@ -231,15 +231,15 @@ void setup() {
   }
   offset = tot/num;
 
+
+
   digitalWrite(LED_BUILTIN,HIGH);
 
   while (digitalRead(PIN_BOTON));
+  enviarMensaje(666);
+  enviarMensaje(pixy.changeProg("line"));
   setEnable(1);
-  delay(3000);
-
-
-
-  pixy.changeProg("line");
+  delay(1000);
   
   }
 
