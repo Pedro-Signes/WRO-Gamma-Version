@@ -155,10 +155,10 @@ void Frenar(byte distancia){
 }
 
 void setup() {
-/*
+
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_ip, gateway, subnet);
-  server.begin();*/
+  server.begin();
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
@@ -166,7 +166,6 @@ void setup() {
   Wire.begin();
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
-  Serial.begin(115200);
   delay(100);
   setEnable(1);
   estado = e::Inico;
@@ -205,13 +204,12 @@ void setup() {
     delay(5);
   }
   offset = tot/num;
-  Serial.println("Todo funcionando");
 
   digitalWrite(LED_BUILTIN, HIGH);
 
-  setEnable(1);
-
   while (digitalRead(PIN_BOTON));
+
+  setEnable(1);
 
   delay(1000);
 
@@ -225,7 +223,7 @@ void enviarMensaje(int numero){
   Udp.endPacket();
 }*/
 
-/*
+
 void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
@@ -259,7 +257,7 @@ void EnviarTelemetria(){
   Udp.endPacket();
   prev_ms4 = millis() + 10;
   }
- }*/
+ }
 
 void loop() {
   
@@ -269,7 +267,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
+      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;

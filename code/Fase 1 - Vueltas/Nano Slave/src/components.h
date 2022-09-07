@@ -4,7 +4,7 @@
 #define servoMIN 52
 #define servoO 84
 #define kp 0.3
-#define kd 3
+#define kd 2
 
 #define PinConServo 9
 #define PinEnMotor 5
@@ -91,7 +91,7 @@ void Motor::potencia(int pot){
 
 void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   _error = velocidadTarget - velocidadActual;
-  _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, -255, 255);
+  _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, -150, 150);
   _errorAnterior = _error;
   if (velocidadTarget==0){
     potencia(0);

@@ -32,6 +32,8 @@ int velocidadObjetivo = 0;
 int encodertotal = 0;
 uint32_t tiempo = 0;
 
+bool ESP_prepared = false;
+
 void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
@@ -96,20 +98,15 @@ void setup() {
   Wire.onRequest(requestEvent); // register event
 
   LecturaUltrasonidos();
-
-  cli();
-  TCCR2A = 0;                 // Reset entire TCCR1A to 0 
-  TCCR2B = 0;                 // Reset entire TCCR1B to 0
-  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024
-  TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
-  OCR2B = 255;                //Finally we set compare register B to this value 
-  sei(); 
   
   byte mainpixel = 0;
   int sense = 1;
-  while(velocidadObjetivo==0){
+  while(!ESP_prepared){
     for(int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i,sense);
+      if (ESP_prepared){
+        break;
+      }
     }
     pixels.show();
     delay(120);
@@ -127,6 +124,14 @@ void setup() {
   }
   pixels.show();
 
+  cli();
+  TCCR2A = 0;                 // Reset entire TCCR1A to 0 
+  TCCR2B = 0;                 // Reset entire TCCR1B to 0
+  TCCR2B |= B00000111;        //Set CS20, CS21 and CS22 to 1 so we get prescalar 1024
+  TIMSK2 |= B00000100;        //Set OCIE1B to 1 so we enable compare match B
+  OCR2B = 255;                //Finally we set compare register B to this value 
+  sei();
+  
 }
 
 void loop() {
@@ -164,7 +169,7 @@ void receiveEvent(int howMany) {
     }else if(requestedData == 5){
       int valor_enable = Wire.read();
       digitalWrite(PinEnable,valor_enable);
-
+      ESP_prepared = true;
     }
 
   }
