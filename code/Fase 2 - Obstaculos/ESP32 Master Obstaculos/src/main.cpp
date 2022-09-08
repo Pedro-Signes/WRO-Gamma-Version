@@ -206,6 +206,7 @@ void setup() {
   //loadCalibration();
 
   medirUltrasonidos();
+  Serial.begin(115200);
    
   int num =0;
   float tot =0;
@@ -235,15 +236,12 @@ void setup() {
 
 
 void enviarMensaje(int numero){
-  Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(numero).c_str());
-  Udp.endPacket();
+ Serial.println(numero);
 }
 
 
 
-void EnviarTelemetria(){
+/*void EnviarTelemetria(){
   static uint32_t prev_ms4 = millis();
   if (millis()> prev_ms4) {
     Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
@@ -284,7 +282,7 @@ void EnviarTelemetria(){
     Udp.endPacket();
     prev_ms4 = millis() + 10;
   }
- }
+ }*/
 
 void loop() {
   static uint32_t prev_ms = millis();
@@ -293,7 +291,7 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
+      //EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           if (forward){
@@ -327,7 +325,7 @@ void loop() {
  {
  case e::Inicio:
   
-  if (medidaencoder >190){
+  if (medidaencoder >200){
     setVelocidad(0);
     estado = e::DecidiendoGiro;
   }
@@ -399,11 +397,6 @@ void loop() {
       }
       LecturaGiro = false;
       MarcaEncoder = medidaencoder;
-      if(pixy.changeProg("color") == 0){
-        enviarMensaje(2222);
-      }else{
-        enviarMensaje(3333);
-     }
       setVelocidad(-15);
       estado = e::Atras;
     }
