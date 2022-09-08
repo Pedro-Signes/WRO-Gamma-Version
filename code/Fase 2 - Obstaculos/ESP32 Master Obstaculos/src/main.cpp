@@ -6,15 +6,6 @@
 #include <WiFiUdp.h>
 #include <Pixy2.h>
 
-#define CONSOLE_IP "192.168.1.2"
-#define CONSOLE_PORT 4210
-const char* ssid = "ESP32";
-const char* password = "12345678";
-WiFiUDP Udp;
-IPAddress local_ip(192, 168, 1, 1);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-WebServer server(80);
 
 #define tamanoMinimodeEsquive 55
 #define GreenSignature 1
@@ -152,6 +143,13 @@ void setVelocidad(int velocidad){
   Wire.endTransmission();
 }
 
+void enviarMensaje(int numero){
+ Serial.println(numero);
+}
+void enviarMensaje(String texto){
+ Serial.println(texto);
+}
+
 void medirUltrasonidos(){
 
   Wire.beginTransmission(4);
@@ -166,12 +164,10 @@ void medirUltrasonidos(){
 }
 
 void setup() {
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(local_ip, gateway, subnet);
-  server.begin();
   pixy.init();
 
   Serial.begin(115200);
+
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
@@ -181,7 +177,8 @@ void setup() {
   Wire1.begin(15,4,freq);
   delay(100);
   estado = e::Inicio;
-  
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
   //Calibrar();
 
   for(int i = 0; i<20 ; i++){
@@ -206,7 +203,6 @@ void setup() {
   //loadCalibration();
 
   medirUltrasonidos();
-  Serial.begin(115200);
    
   int num =0;
   float tot =0;
@@ -218,7 +214,11 @@ void setup() {
     delay(5);
   }
   offset = tot/num;
-  pixy.changeProg("line");
+
+  for( int i = 0; i<4; i++){
+    enviarMensaje(pixy.changeProg("line"));
+  }
+
   digitalWrite(LED_BUILTIN,HIGH);
 
   
@@ -235,55 +235,6 @@ void setup() {
 }
 
 
-void enviarMensaje(int numero){
- Serial.println(numero);
-}
-
-
-
-/*void EnviarTelemetria(){
-  static uint32_t prev_ms4 = millis();
-  if (millis()> prev_ms4) {
-    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-    // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-    Udp.printf(String(medidasUltrasonidos[ultraFrontal]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(estado).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(90*vuelta).c_str());
-    Udp.printf(";");
-    Udp.printf(String(valorBrujula).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionAnterior).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionActual).c_str());
-    Udp.printf(";");
-    Udp.printf(String(giros).c_str());
-    Udp.printf(";");
-    Udp.printf(String(sentidoGiro).c_str());
-    Udp.printf(";");
-    Udp.printf(String(LecturaGiro).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.ccc.numBlocks).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.ccc.blocks[0].m_signature).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.line.numVectors).c_str());
-    Udp.endPacket();
-    prev_ms4 = millis() + 10;
-  }
- }*/
-
 void loop() {
   static uint32_t prev_ms = millis();
   if (mpu.update()) {
@@ -291,7 +242,6 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      //EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
           if (forward){
@@ -306,7 +256,9 @@ void loop() {
   if (millis()> prev_ms2) {
     prev_ms2 = millis() + 20;
     medirUltrasonidos();
-    pixy.ccc.getBlocks();
+    if (!LecturaGiro) {
+      pixy.ccc.getBlocks();
+      }
   }
 
   static uint32_t prev_ms3 = millis();
@@ -378,9 +330,13 @@ void loop() {
 
  case e::DecidiendoGiro:
   if (LecturaGiro){
+
     pixy.line.getMainFeatures(LINE_VECTOR);
+    delay(100);
     enviarMensaje(8888);
+
     enviarMensaje(pixy.line.numVectors);
+    
     if (pixy.line.numVectors){
       enviarMensaje(9999);
       int x0 = pixy.line.vectors[0].m_x0;
@@ -389,11 +345,11 @@ void loop() {
       int y1 = pixy.line.vectors[0].m_y1;
       float m = (y1 - y0);
       if (m < 0){
-        sentidoGiro = true;
-        enviarMensaje(1);
-      }else{
         sentidoGiro = false;
-        enviarMensaje(-1);
+        enviarMensaje("Izquierda");
+      }else{
+        sentidoGiro = true;
+        enviarMensaje("Derecha");
       }
       LecturaGiro = false;
       MarcaEncoder = medidaencoder;
@@ -411,7 +367,7 @@ void loop() {
       estado = e::ManiobraIzquierda1;
     }
   }
-  delay(100);
+  delay(1000);
   break;
 
   case e::Atras:
@@ -584,6 +540,5 @@ void loop() {
   break;
 
  }
-
 
 }

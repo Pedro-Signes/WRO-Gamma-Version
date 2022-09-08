@@ -132,62 +132,13 @@ void medirUltrasonidos(){
 }
 
 void enviarMensaje(int numero){
-  Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(numero).c_str());
-  Udp.endPacket();
-
+ Serial.println(numero);  
 }
 
 
-void EnviarTelemetria(){
-  static uint32_t prev_ms4 = millis();
-  if (millis()> prev_ms4) {
-    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-    // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-    Udp.printf(String(medidasUltrasonidos[ultraFrontal]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
-    Udp.printf(";");
-    Udp.printf(String(estado).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-    Udp.printf(";");
-    Udp.printf(String(90*vuelta).c_str());
-    Udp.printf(";");
-    Udp.printf(String(valorBrujula).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionAnterior).c_str());
-    Udp.printf(";");
-    Udp.printf(String(ErrorDireccionActual).c_str());
-    Udp.printf(";");
-    Udp.printf(String(giros).c_str());
-    Udp.printf(";");
-    Udp.printf(String(sentidoGiro).c_str());
-    Udp.printf(";");
-    Udp.printf(String(LecturaGiro).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.ccc.numBlocks).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.ccc.blocks[0].m_signature).c_str());
-    Udp.printf(";");
-    Udp.printf(String(pixy.line.numVectors).c_str());
-    Udp.endPacket();
-    prev_ms4 = millis() + 10;
-  }
- }
-
 void setup() {
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(local_ip, gateway, subnet);
-  server.begin();
   pixy.init();
+  Serial.begin(115200);
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
@@ -198,6 +149,8 @@ void setup() {
   delay(100);
   setEnable(1);
   estado = e::Inicio;
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
   
   for(int i = 0; i<20 ; i++){
     digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
@@ -263,7 +216,8 @@ void setup() {
         enviarMensaje(-1);}
       LecturaGiro = false;
       if(pixy.changeProg("color")){
-      enviarMensaje(2222);} else enviarMensaje(3333);
+      enviarMensaje(2222);
+      } else enviarMensaje(3333);
     } 
     delay(1000);
  }
