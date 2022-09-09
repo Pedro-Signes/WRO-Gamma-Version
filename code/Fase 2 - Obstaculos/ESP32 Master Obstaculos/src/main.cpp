@@ -154,9 +154,9 @@ void EnviarTelemetria()
 {
   Serial.print(estado);
   Serial.print(",");
-  Serial.print(ultraFrontal);
+  Serial.print(medidasUltrasonidos[ultraFrontal]);
   Serial.print(",");
-  Serial.print(ultraTrasero);
+  Serial.print(medidasUltrasonidos[ultraTrasero]);
   Serial.print(",");
   Serial.print(MarcaEncoder);
   Serial.print(",");
@@ -503,7 +503,7 @@ void loop() {
   break;
 
   case e::ManiobraDerecha4:
-    if(medidasUltrasonidos[ultraTrasero] <= 15){
+    if((abs(ErrorDireccionActual) <= 10) || (medidasUltrasonidos[ultraTrasero] <= 15)){
       setVelocidad(0);
       AutoGiro = true;
       setVelocidad(20);
@@ -544,7 +544,7 @@ void loop() {
   break;
 
   case e::ManiobraIzquierda4:
-    if(medidasUltrasonidos[ultraTrasero] <= 15){
+    if((abs(ErrorDireccionActual) <= 10) || (medidasUltrasonidos[ultraTrasero] <= 15)){
       setVelocidad(0);
       AutoGiro = true;
       setVelocidad(20);
