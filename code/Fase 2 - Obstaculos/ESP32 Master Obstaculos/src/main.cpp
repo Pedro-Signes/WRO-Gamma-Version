@@ -150,6 +150,19 @@ void enviarMensaje(String texto){
  Serial.println(texto);
 }
 
+void EnviarTelemetria()
+{
+  Serial.print(estado);
+  Serial.print(",");
+  Serial.print(ultraFrontal);
+  Serial.print(",");
+  Serial.print(ultraTrasero);
+  Serial.print(",");
+  Serial.print(MarcaEncoder);
+  Serial.print(",");
+  Serial.println(medidaencoder);
+}
+
 void medirUltrasonidos(){
 
   Wire.beginTransmission(4);
@@ -244,11 +257,12 @@ void loop() {
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
-          if (forward){
+          //if (forward){
             setGiro(ErrorDireccionActual);
-          }else setGiro(-ErrorDireccionActual);
+          //}else setGiro(-ErrorDireccionActual);
         }
         ErrorDireccionAnterior = ErrorDireccionActual;
+        EnviarTelemetria();
       }
   }
     
@@ -462,7 +476,7 @@ void loop() {
     AutoGiro = false;
     setGiro(23);
     MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
+    setVelocidad(-10);
     estado = e::ManiobraDerecha2;
 
   break;
@@ -478,12 +492,12 @@ void loop() {
   break;
 
   case e::ManiobraDerecha3:
-    if((abs(ErrorDireccionActual) <= 20) || (medidasUltrasonidos[ultraFrontal] <= 15)){
+    if((medidaencoder - MarcaEncoder)>250 || (medidasUltrasonidos[ultraFrontal] <= 15)){
       setVelocidad(0);
       AutoGiro = false;
       MarcaEncoder = medidaencoder;
       setGiro(+5);
-      setVelocidad(-15);
+      setVelocidad(-10);
       estado = e::ManiobraDerecha4;
     }
   break;
@@ -498,14 +512,13 @@ void loop() {
     }
   break;
   
-    
+
   case e::ManiobraIzquierda1:
     AutoGiro = false;
     setGiro(-23);
     MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
+    setVelocidad(-10);
     estado = e::ManiobraIzquierda2;
-
   break;
 
   case e::ManiobraIzquierda2:
@@ -514,17 +527,18 @@ void loop() {
       direccionObjetivo = direccionObjetivo + 90;
       AutoGiro = true;
       setVelocidad(20);
+      MarcaEncoder = medidaencoder;
       estado = e::ManiobraIzquierda3;
     }  
   break;
 
   case e::ManiobraIzquierda3:
-    if((abs(ErrorDireccionActual) <= 20) || (medidasUltrasonidos[ultraFrontal] <= 15)){
+    if((medidaencoder - MarcaEncoder)>250 || (medidasUltrasonidos[ultraFrontal] <= 15)){
       setVelocidad(0);
       AutoGiro = false;
       MarcaEncoder = medidaencoder;
       setGiro(-5);
-      setVelocidad(-15);
+      setVelocidad(-10);
       estado = e::ManiobraIzquierda4;
     }
   break;
