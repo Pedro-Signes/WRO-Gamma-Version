@@ -6,7 +6,15 @@
 #include <WiFiUdp.h>
 #include <Pixy2.h>
 
-
+#define CONSOLE_IP "192.168.1.2"
+#define CONSOLE_PORT 4210
+const char* ssid = "ESP32";
+const char* password = "12345678";
+WiFiUDP Udp;
+IPAddress local_ip(192, 168, 1, 1);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+WebServer server(80);
 
 #define PIN_BOTON 13
 
@@ -45,29 +53,10 @@ bool forward = true;
 
 enum e{
   Inicio,
-  Recto,
   DecidiendoGiro,
-  ManiobraDerecha1,
-  ManiobraDerecha2,
-  ManiobraDerecha3,
-  ManiobraDerecha4,
-  ParadaNoSeQueMasHacer,
-  Atras,
-  Final
 };
 
 int estado = e::Inicio;
-
-
-/*void Calibrar(){ // función para calibrar ( revisar )
-  mpu.verbose(true);  
-  delay(1000);
-  mpu.calibrateMag();
-  mpu.calibrateAccelGyro();
-  mpu.verbose(false);
-  saveCalibration();
-}*/
-
 
 long medirEncoder() {
   Wire.beginTransmission(4);
@@ -129,13 +118,6 @@ void setVelocidad(int velocidad){
   Wire.endTransmission();
 }
 
-void enviarMensaje(int numero){
- Serial.println(numero);
-}
-void enviarMensaje(String texto){
- Serial.println(texto);
-}
-
 void medirUltrasonidos(){
 
   Wire.beginTransmission(4);
@@ -149,11 +131,14 @@ void medirUltrasonidos(){
   }
 }
 
+void enviarMensaje(int numero){
+ Serial.println(numero);  
+}
+
+
 void setup() {
   pixy.init();
-
   Serial.begin(115200);
-
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
@@ -162,10 +147,11 @@ void setup() {
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
+  setEnable(1);
+  estado = e::Inicio;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
-  //Calibrar();
-
+  
   for(int i = 0; i<20 ; i++){
     digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
     delay(100);
@@ -185,8 +171,6 @@ void setup() {
       digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
   }
 
-  //loadCalibration();
-
   medirUltrasonidos();
    
   int num =0;
@@ -200,182 +184,40 @@ void setup() {
   }
   offset = tot/num;
 
-  for( int i = 0; i<4; i++){
-    enviarMensaje(pixy.changeProg("line"));
-  }
+
 
   digitalWrite(LED_BUILTIN,HIGH);
 
-  
-
-  
-
   while (digitalRead(PIN_BOTON));
+  enviarMensaje(666);
+  enviarMensaje(pixy.changeProg("line"));
   setEnable(1);
   delay(1000);
-
-
-  setVelocidad(13);
-  delay(500);
-}
-
-
-void loop() {
-  static uint32_t prev_ms = millis();
-  if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms;
-      prev_ms = millis();
-      valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-      ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      if(ErrorDireccionAnterior != ErrorDireccionActual){
-        if (AutoGiro){
-          if (forward){
-            setGiro(ErrorDireccionActual);
-          }else setGiro(-ErrorDireccionActual);
-        }
-        ErrorDireccionAnterior = ErrorDireccionActual;
-      }
-  }
-    
-  static uint32_t prev_ms2 = millis();
-  if (millis()> prev_ms2) {
-    prev_ms2 = millis() + 20;
-    medirUltrasonidos();
-  }
-
-  static uint32_t prev_ms3 = millis();
-  if (millis()> prev_ms3) {
-      prev_ms3 = millis() + 30;
-      medidaencoder = medirEncoder();
-  }
-
   
- switch (estado)
- {
- case e::Inicio:
-  
-  if (medidaencoder >200){
-    setVelocidad(0);
-    estado = e::DecidiendoGiro;
   }
-  
-  break;
 
-  case e::Recto:
-
-  if(medidasUltrasonidos[ultraFrontal] <= 30){
-    estado = e::DecidiendoGiro;
-  }
-  if(medidasUltrasonidos[ultraFrontal] <= 10){
-    estado = e::ParadaNoSeQueMasHacer;
-  }
-  
-  break;
-
- case e::DecidiendoGiro:
-  if (LecturaGiro){
-
-    pixy.line.getMainFeatures(LINE_VECTOR);
-    delay(100);
-    enviarMensaje(8888);
-
+ void loop(){
+  pixy.line.getMainFeatures(LINE_VECTOR);
+  enviarMensaje(8888);
     enviarMensaje(pixy.line.numVectors);
-    
+
     if (pixy.line.numVectors){
       enviarMensaje(9999);
       int x0 = pixy.line.vectors[0].m_x0;
       int y0 = pixy.line.vectors[0].m_y0;
       int x1 = pixy.line.vectors[0].m_x1;
       int y1 = pixy.line.vectors[0].m_y1;
-      float m = (y1 - y0);
+      float m = (y1 - y0) ;
       if (m < 0){
-        sentidoGiro = false;
-        enviarMensaje("Izquierda");
-      }else{
         sentidoGiro = true;
-        enviarMensaje("Derecha");
-      }
+        enviarMensaje(1);
+      }else {
+        sentidoGiro = false;
+        enviarMensaje(-1);}
       LecturaGiro = false;
-      MarcaEncoder = medidaencoder;
-      setVelocidad(-15);
-      estado = e::Atras;
-    }
-  }else {
-    if (sentidoGiro){
-      setVelocidad(0);
-      delay(20);
-      estado = e::ManiobraDerecha1;
-    } else {
-      setVelocidad(0);
-      delay(20);
-      estado = e::ManiobraIzquierda1;
-    }
-  }
-  delay(1000);
-  break;
-
-  case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 190){
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(17);
-      estado = e::Recto;
-    }
-  break;
-
- case e::Final:
-  if((medidaencoder - MarcaEncoder) > 500){
-    setVelocidad(0);
-  }
-  break;
-
- case e::ParadaNoSeQueMasHacer:
-  setVelocidad(0);
-  estado = e::DecidiendoGiro;
-  break;
-
-  case e::ManiobraDerecha1:
-    AutoGiro = false;
-    setGiro(23);
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
-    estado = e::ManiobraDerecha2;
-
-  break;
-
-  case e::ManiobraDerecha2:
-    if((medidaencoder - MarcaEncoder)<-325){
-      setVelocidad(0);
-      direccionObjetivo = direccionObjetivo - 90;
-      AutoGiro = true;
-      setVelocidad(20);
-      estado = e::ManiobraDerecha3;
-    }  
-  break;
-
-  case e::ManiobraDerecha3:
-    if((abs(ErrorDireccionActual) <= 20) || (medidasUltrasonidos[ultraFrontal] <= 15)){
-      setVelocidad(0);
-      AutoGiro = false;
-      MarcaEncoder = medidaencoder;
-      setGiro(+5);
-      setVelocidad(-15);
-      estado = e::ManiobraDerecha4;
-    }
-  break;
-
-  case e::ManiobraDerecha4:
-    if(medidasUltrasonidos[ultraTrasero] <= 15){
-      setVelocidad(0);
-      AutoGiro = true;
-      setVelocidad(20);
-      giros ++;
-      estado = e::Recto;
-    }
-  break;
-  
-    
-
+      if(pixy.changeProg("color")){
+      enviarMensaje(2222);
+      } else enviarMensaje(3333);
+    } 
+    delay(1000);
  }
-
-}
