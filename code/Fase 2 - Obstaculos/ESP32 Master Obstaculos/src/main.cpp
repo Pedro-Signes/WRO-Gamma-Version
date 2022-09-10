@@ -65,6 +65,12 @@ enum e{
   ManiobraIzquierda2,
   ManiobraIzquierda3,
   ManiobraIzquierda4,
+  ManiobraIzquierda5,
+  ManiobraIzquierda6,
+  PosIzquierda1,
+  PosIzquierda2,
+  PosIzquierda3,
+  PosIzquierda4,
   ParadaNoSeQueMasHacer,
   Atras,
   Final
@@ -160,7 +166,11 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print(MarcaEncoder);
   Serial.print(",");
-  Serial.println(medidaencoder);
+  Serial.print(medidaencoder);
+  Serial.print(",");
+  Serial.print(medidaencoder - MarcaEncoder);
+  Serial.print(",");
+  Serial.println(valorBrujula);
 }
 
 void medirUltrasonidos(){
@@ -257,9 +267,9 @@ void loop() {
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         if (AutoGiro){
-          //if (forward){
+          if (forward){
             setGiro(ErrorDireccionActual);
-          //}else setGiro(-ErrorDireccionActual);
+          }else setGiro(-ErrorDireccionActual);
         }
         ErrorDireccionAnterior = ErrorDireccionActual;
         EnviarTelemetria();
@@ -515,44 +525,55 @@ void loop() {
 
   case e::ManiobraIzquierda1:
     AutoGiro = false;
-    setGiro(-23);
+    direccionObjetivo = direccionObjetivo + 90;
+    setGiro(-30);
     MarcaEncoder = medidaencoder;
-    setVelocidad(-10);
+    setVelocidad(-15);
     estado = e::ManiobraIzquierda2;
   break;
 
   case e::ManiobraIzquierda2:
-    if((medidaencoder - MarcaEncoder)<-325){
+    if((medidaencoder - MarcaEncoder)<-100){
       setVelocidad(0);
-      direccionObjetivo = direccionObjetivo + 90;
-      AutoGiro = true;
-      setVelocidad(20);
-      MarcaEncoder = medidaencoder;
-      estado = e::ManiobraIzquierda3;
+      estado = e::PosIzquierda1;
     }  
   break;
 
-  case e::ManiobraIzquierda3:
-    if((medidaencoder - MarcaEncoder)>250 || (medidasUltrasonidos[ultraFrontal] <= 15)){
-      setVelocidad(0);
-      AutoGiro = false;
-      MarcaEncoder = medidaencoder;
-      setGiro(-5);
-      setVelocidad(-10);
-      estado = e::ManiobraIzquierda4;
-    }
-  break;
 
-  case e::ManiobraIzquierda4:
-    if((abs(ErrorDireccionActual) <= 10) || (medidasUltrasonidos[ultraTrasero] <= 15)){
+  case e::PosIzquierda1:
+    setGiro(23);
+    MarcaEncoder = medidaencoder;
+    setVelocidad(15);
+    estado = e::PosIzquierda2;
+ 
+
+ case e::PosIzquierda2:
+    if ((medidaencoder - MarcaEncoder) > 50){
+    setVelocidad(0);
+    setGiro(-23);
+    MarcaEncoder = medidaencoder;
+    setVelocidad(-15);
+    estado = PosIzquierda3;
+    }
+ 
+ case e::PosIzquierda3:
+    if((medidaencoder - MarcaEncoder)< -50){
       setVelocidad(0);
-      AutoGiro = true;
-      setVelocidad(20);
-      giros ++;
+      if (abs(ErrorDireccionActual) <= 20){
+        AutoGiro = true;
+        setVelocidad(-15);
+        estado = e::PosIzquierda4;
+      }else {
+        estado = e::PosIzquierda1;
+      }
+    }
+  
+  case e::PosIzquierda4:
+    if (medidasUltrasonidos[ultraTrasero] < 15) {
+      setVelocidad(0);
+      delay(50);
+      setVelocidad(17);
       estado = e::Recto;
     }
-  break;
-
  }
-
 }

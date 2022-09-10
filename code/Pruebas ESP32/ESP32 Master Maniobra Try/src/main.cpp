@@ -31,9 +31,6 @@ int encoderAMover = 0;
 
 uint32_t Duracion_de_la_muestra = 0;
 
-MPU9250 mpu;
-Pixy2 pixy;
-
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
@@ -43,6 +40,7 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
+bool destino = true;
 
 bool forward = true;
 
@@ -153,25 +151,25 @@ void medirUltrasonidos(){
 }
 
 String maquina(String order, String arg){
-  if (order == "encoder"){
+  if (order == String("encoder")){
     MarcaEncoder = medidaencoder;
+    destino = true;
     setVelocidad(velocidad);
     encoderAMover = String(arg).toInt();
     return ("encoder establecido");
   }
-  if (order == "vel") {
+  else if (order == String("vel")) {
     velocidad = String(arg).toInt();
     return ("velocidad establecida");
   }
-  if (order == "servo") {
+  else if (order == String("servo")) {
     setGiro(String(arg).toInt());
     return ("servo establecido");
-  }
+  }else{
+    return order;}
 }
 
 void setup() {
-  pixy.init();
-
   Serial.begin(115200);
 
 
@@ -184,45 +182,6 @@ void setup() {
   delay(100);
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
-  //Calibrar();
-
-  for(int i = 0; i<20 ; i++){
-    digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
-    delay(100);
-  }
-  MPU9250Setting setting;
-    setting.accel_fs_sel = ACCEL_FS_SEL::A16G;
-    setting.gyro_fs_sel = GYRO_FS_SEL::G2000DPS;
-    setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS;
-    setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_200HZ;
-    setting.gyro_fchoice = 0x03;
-    setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_41HZ;
-    setting.accel_fchoice = 0x01;
-    setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
-  while(!mpu.setup(0x68,setting,Wire1)) {  // change to your own address
-      //Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
-      delay(1000);
-      digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
-  }
-
-  //loadCalibration();
-
-   
-  int num =0;
-  float tot =0;
-  while (num < 1000){
-    if (mpu.update()){
-      num = num +1;
-      tot = tot + mpu.getGyroZ();
-    }
-    delay(5);
-  }
-  offset = tot/num;
-
-  for( int i = 0; i<4; i++){
-    enviarMensaje(pixy.changeProg("line"));
-  }
-
 
   digitalWrite(LED_BUILTIN,HIGH);
 
@@ -238,36 +197,19 @@ void setup() {
 
 
 void loop() {
-  static uint32_t prev_ms = millis();
-  if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms;
-      prev_ms = millis();
-      valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-      ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      if(ErrorDireccionAnterior != ErrorDireccionActual){
-        if (AutoGiro){
-          //if (forward){
-            setGiro(ErrorDireccionActual);
-          //}else setGiro(-ErrorDireccionActual);
-        }
-        ErrorDireccionAnterior = ErrorDireccionActual;
-      }
-  }
-
-  static uint32_t prev_ms3 = millis();
-  if (millis()> prev_ms3) {
-      prev_ms3 = millis() + 30;
-      medidaencoder = medirEncoder();
-  }
+  medidaencoder = medirEncoder();
 
   if (Serial.available()){
     String order = Serial.readString();
+    delay(500);
     String argument = Serial.readString();
     Serial.println(maquina(order, argument));
   }
-
-  if (MarcaEncoder >= encoderAMover){
+  if (abs(medidaencoder - MarcaEncoder) > encoderAMover && destino){
     setVelocidad(0);
+    destino = false;
     Serial.println("Destino alcanzado");
   }
+
+  delay(30);
 }
