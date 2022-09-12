@@ -50,12 +50,9 @@ enum e{
   Inicio,
   Recto,
   DecidiendoBloque,
-  EsquivarDerecha1,
-  EsquivarDerecha2,
-  EsquivarDerecha3,
-  EsquivarIzquierda1,
-  EsquivarIzquierda2,
-  EsquivarIzquierda3,
+  Esquivar1,
+  Esquivar2,
+  Esquivar3,
   DecidiendoGiro,
   Maniobra1,
   Maniobra2,
@@ -311,29 +308,18 @@ void loop() {
     }
   }
   if (tamano > tamanoMinimodeEsquive){
-    if(pixy.ccc.blocks[mayor].m_signature == GreenSignature) //Bloque de esquivar izquierda
-    {
-      setVelocidad(0);
-      delay(50);
-      direccionObjetivo = direccionObjetivo - 40;
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(-15);
-      MarcaEncoder=medidaencoder;
-      estado = e::EsquivarIzquierda1;
-    }
-    else if (pixy.ccc.blocks[mayor].m_signature == RedSignature) //Bloque de esquivar derecha
-    {
-      setVelocidad(0);
-      delay(50);
+    setVelocidad(0);
+    delay(50);
+    if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
       direccionObjetivo = direccionObjetivo + 40;
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(-15);
-      MarcaEncoder=medidaencoder;
-      estado = e::EsquivarDerecha1;
+    } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      direccionObjetivo = direccionObjetivo - 40;
     }
-
+    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
+    setGiro(ErrorDireccionActual);
+    setVelocidad(-15);
+    MarcaEncoder = medidaencoder;
+    estado = e::Esquivar1;
   }
   if(medidasUltrasonidos[ultraFrontal] <= 30){
     estado = e::DecidiendoGiro;
@@ -400,31 +386,42 @@ void loop() {
   estado = e::DecidiendoGiro;
   break;
 
- case e::EsquivarDerecha1:
+ case e::Esquivar1:
   if ((MarcaEncoder - medidaencoder) >= 50 ){
-    direccionObjetivo = direccionObjetivo - 80;
+    if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      direccionObjetivo = direccionObjetivo - 80;
+    } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      direccionObjetivo = direccionObjetivo + 80;
+    }
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
     setVelocidad(0);
     delay(20);
     setVelocidad(13);
-    estado = e::EsquivarDerecha2;
+    estado = e::Esquivar2;
   }
   break;
 
- case e::EsquivarDerecha2:
-   
+ case e::Esquivar2:
   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo + 80;
+    if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      direccionObjetivo = direccionObjetivo + 80;
+    } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      direccionObjetivo = direccionObjetivo - 80;
+    }
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
-    estado = e::EsquivarDerecha3;
+    estado = e::Esquivar3;
   }
   break;
   
-  case e::EsquivarDerecha3:
+  case e::Esquivar3:
    if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo -40;
+    if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      direccionObjetivo = direccionObjetivo - 40;
+    } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      direccionObjetivo = direccionObjetivo + 40;
+    }
     ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
     setGiro(ErrorDireccionActual);
     setVelocidad(13);
@@ -433,40 +430,6 @@ void loop() {
 
   break;
 
-  case e::EsquivarIzquierda1:
-    
-    if ((MarcaEncoder - medidaencoder) >= 20 ){
-    direccionObjetivo = direccionObjetivo + 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(0);
-    delay(20);
-    setVelocidad(13);
-
-    estado = e::EsquivarIzquierda2;
-  }
-
-  break;
-
-  case e::EsquivarIzquierda2:
-   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo - 80;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    estado = e::EsquivarIzquierda3;
-  }
-
-  break;
-
-  case e::EsquivarIzquierda3:
-   if(abs(ErrorDireccionActual) <= 5){
-    direccionObjetivo = direccionObjetivo + 40;
-    ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-    setGiro(ErrorDireccionActual);
-    setVelocidad(13);
-    estado = e::Recto;
-   }
-  break;  
 
   case e::Maniobra1:
     AutoGiro = false;
