@@ -34,6 +34,8 @@ uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 Pixy2 pixy;
 
+bool esquivarDerecha = false;
+
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
@@ -49,12 +51,11 @@ bool forward = true;
 enum e{
   Inicio,
   Recto,
-  DecidiendoBloque,
-  Esquivar1,
+  Esquivar1, // Esquivar Bloques
   Esquivar2,
   Esquivar3,
   DecidiendoGiro,
-  Maniobra1,
+  Maniobra1, // Girar
   Maniobra2,
   Posicionamiento1,
   Posicionamiento2,
@@ -303,14 +304,16 @@ void loop() {
           tamano = pixy.ccc.blocks[i].m_height;
         }
       }
-    }
+    } 
     if (tamano > tamanoMinimodeEsquive){
       setVelocidad(0);
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo + 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        esquivarDerecha = true;
         direccionObjetivo = direccionObjetivo - 40;
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        esquivarDerecha = false;
+        direccionObjetivo = direccionObjetivo + 40;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -384,10 +387,10 @@ void loop() {
 
   case e::Esquivar1:
     if ((MarcaEncoder - medidaencoder) >= 50 ){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo - 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo + 80;
+      if (esquivarDerecha) {
+        direccionObjetivo = direccionObjetivo - 0;
+      } else {
+        direccionObjetivo = direccionObjetivo + 0;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -400,9 +403,9 @@ void loop() {
 
   case e::Esquivar2:
     if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      } else {
         direccionObjetivo = direccionObjetivo - 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -413,9 +416,9 @@ void loop() {
   
   case e::Esquivar3:
     if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo - 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      } else {
         direccionObjetivo = direccionObjetivo + 40;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
