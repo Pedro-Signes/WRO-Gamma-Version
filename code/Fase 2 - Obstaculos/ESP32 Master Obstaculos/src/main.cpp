@@ -45,7 +45,7 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
-long MarcaUltimoEncoder = 0;
+long MarcaEncoderTramo = -2000;
 
 bool forward = true;
 
@@ -161,7 +161,7 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
-  Serial.print(MarcaUltimoEncoder);
+  Serial.print(MarcaEncoderTramo);
   Serial.print(",");
   Serial.println(valorBrujula);
 }
@@ -300,7 +300,7 @@ void loop() {
   break;
 
   case e::Recto:
-    if ((giros == 1) && ((medidaencoder - MarcaUltimoEncoder) >= 3000)) {
+    if ((giros == 2) && ((medidaencoder - MarcaEncoderTramo) >= 1100)) {
       estado = e::Final;
     }
     if(pixy.ccc.numBlocks){
@@ -327,17 +327,19 @@ void loop() {
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
-    if(medidasUltrasonidos[ultraFrontal] <= 30){
+    if((medidasUltrasonidos[ultraFrontal] <= 30) && ((medidaencoder - MarcaEncoderTramo) >= 2200)){
       estado = e::DecidiendoGiro;
     }
-    if(medidasUltrasonidos[ultraFrontal] <= 10){
-      estado = e::ParadaNoSeQueMasHacer;
+    if(medidasUltrasonidos[ultraFrontal] <= 20){
+      setVelocidad(0);
+      MarcaEncoder = medidaencoder;
+      setVelocidad(-15);
+      estado = e::Atras;
     }
   break;
 
   case e::DecidiendoGiro:
     if (LecturaGiro){
-
       pixy.line.getMainFeatures(LINE_VECTOR);
       delay(100);
       enviarMensaje(8888);
@@ -382,7 +384,7 @@ void loop() {
 
   case e::Final:
     setVelocidad(0);
-    //setEnable(0);
+    setEnable(0);
   break;
 
   case e::ParadaNoSeQueMasHacer:
@@ -487,6 +489,7 @@ void loop() {
       setVelocidad(0);
       if (abs(ErrorDireccionActual) <= 20){
         AutoGiro = true;
+        giros++;
         setVelocidad(-15);
         estado = e::Posicionamiento4;
       }else {
@@ -499,10 +502,7 @@ void loop() {
     if (medidasUltrasonidos[ultraTrasero] < 15) {
       setVelocidad(0);
       delay(50);
-      giros++;
-      if (giros == 12){
-        MarcaUltimoEncoder = medidaencoder;
-      }
+      MarcaEncoderTramo = medidaencoder;
       setVelocidad(17);
       estado = e::Recto;
     }
