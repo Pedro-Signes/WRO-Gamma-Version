@@ -45,6 +45,7 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
+long MarcaUltimoEncoder = 0;
 
 bool forward = true;
 
@@ -297,6 +298,9 @@ void loop() {
   break;
 
   case e::Recto:
+    if ((giros == 12) && ((medidaencoder - MarcaUltimoEncoder) >= 1200)) {
+      estado = e::Final;
+    }
     if(pixy.ccc.numBlocks){
       for (int i=0; i < pixy.ccc.numBlocks; i++){
         if(pixy.ccc.blocks[i].m_height > tamano){
@@ -375,9 +379,8 @@ void loop() {
   break;
 
   case e::Final:
-    if((medidaencoder - MarcaEncoder) > 500){
-      setVelocidad(0);
-    }
+    setVelocidad(0);
+    //setEnable(0);
   break;
 
   case e::ParadaNoSeQueMasHacer:
@@ -494,6 +497,10 @@ void loop() {
     if (medidasUltrasonidos[ultraTrasero] < 15) {
       setVelocidad(0);
       delay(50);
+      giros++;
+      if (giros == 12){
+        MarcaUltimoEncoder = medidaencoder;
+      }
       setVelocidad(17);
       estado = e::Recto;
     }

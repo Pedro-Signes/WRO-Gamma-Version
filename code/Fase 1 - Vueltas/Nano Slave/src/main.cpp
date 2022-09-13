@@ -147,7 +147,25 @@ void loop() {
     MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
     tiempo = millis() + 15;
   }
-  
+
+  if(!ESP_prepared){
+    static byte mainpixel = 0;
+    static int sense = 1;
+    for(int i=0; i<NUMPIXELS; i++) {
+      colors(mainpixel,i,sense);
+      if (ESP_prepared){
+        break;
+      }
+    }
+    pixels.show();
+    delay(120);
+    if (mainpixel == NUMPIXELS - 1){
+    sense = -1;}
+    if (mainpixel == 0){
+      sense = 1;
+    }
+    mainpixel = mainpixel + sense;
+  }
 }
 
 
@@ -169,7 +187,7 @@ void receiveEvent(int howMany) {
     }else if(requestedData == 5){
       int valor_enable = Wire.read();
       digitalWrite(PinEnable,valor_enable);
-      ESP_prepared = true;
+      ESP_prepared = valor_enable;
     }
 
   }
