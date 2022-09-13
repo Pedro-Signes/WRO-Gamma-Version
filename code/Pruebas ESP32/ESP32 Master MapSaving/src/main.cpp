@@ -15,7 +15,7 @@
 
 float valorBrujula = 0;
 float offset;
-int vuelta = 1;
+int tramo = -1;
 int giros = 0;
 bool sentidoGiro = true;
 bool LecturaGiro = true;
@@ -34,8 +34,6 @@ uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 Pixy2 pixy;
 
-bool esquivarDerecha = false;
-
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
@@ -45,18 +43,36 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
-long MarcaUltimoEncoder = 0;
 
 bool forward = true;
+
+// Map Saving
+byte Bloques[][2][3];
+byte NumeroBloques[4] = {0, 0, 0, 0};
+long distancia;
+
+
+
+byte posicion(byte bloqueN, byte tramoN){
+  byte res = 0;
+  for (byte n = 0; n < tramoN; n++){
+    res = res + NumeroBloques[n];
+  }
+  if (bloqueN == 1){
+    return res;
+  } else return res + 1;
+}
+
 
 enum e{
   Inicio,
   Recto,
-  Esquivar1, // Esquivar Bloques
+  DecidiendoBloque,
+  Esquivar1,
   Esquivar2,
   Esquivar3,
   DecidiendoGiro,
-  Maniobra1, // Girar
+  Maniobra1,
   Maniobra2,
   Posicionamiento1,
   Posicionamiento2,
@@ -298,9 +314,6 @@ void loop() {
   break;
 
   case e::Recto:
-    if ((giros == 12) && ((medidaencoder - MarcaUltimoEncoder) >= 1200)) {
-      estado = e::Final;
-    }
     if(pixy.ccc.numBlocks){
       for (int i=0; i < pixy.ccc.numBlocks; i++){
         if(pixy.ccc.blocks[i].m_height > tamano){
@@ -308,16 +321,14 @@ void loop() {
           tamano = pixy.ccc.blocks[i].m_height;
         }
       }
-    } 
+    }
     if (tamano > tamanoMinimodeEsquive){
       setVelocidad(0);
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        esquivarDerecha = true;
-        direccionObjetivo = direccionObjetivo - 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        esquivarDerecha = false;
         direccionObjetivo = direccionObjetivo + 40;
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        direccionObjetivo = direccionObjetivo - 40;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -379,8 +390,9 @@ void loop() {
   break;
 
   case e::Final:
-    setVelocidad(0);
-    //setEnable(0);
+    if((medidaencoder - MarcaEncoder) > 500){
+      setVelocidad(0);
+    }
   break;
 
   case e::ParadaNoSeQueMasHacer:
@@ -390,10 +402,10 @@ void loop() {
 
   case e::Esquivar1:
     if ((MarcaEncoder - medidaencoder) >= 50 ){
-      if (esquivarDerecha) {
-        direccionObjetivo = direccionObjetivo - 0;
-      } else {
-        direccionObjetivo = direccionObjetivo + 0;
+      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+        direccionObjetivo = direccionObjetivo - 80;
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        direccionObjetivo = direccionObjetivo + 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -406,9 +418,9 @@ void loop() {
 
   case e::Esquivar2:
     if(abs(ErrorDireccionActual) <= 5){
-      if (esquivarDerecha) {
+      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         direccionObjetivo = direccionObjetivo + 80;
-      } else {
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         direccionObjetivo = direccionObjetivo - 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -419,9 +431,9 @@ void loop() {
   
   case e::Esquivar3:
     if(abs(ErrorDireccionActual) <= 5){
-      if (esquivarDerecha) {
+      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         direccionObjetivo = direccionObjetivo - 40;
-      } else {
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         direccionObjetivo = direccionObjetivo + 40;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -497,11 +509,9 @@ void loop() {
     if (medidasUltrasonidos[ultraTrasero] < 15) {
       setVelocidad(0);
       delay(50);
-      giros++;
-      if (giros == 12){
-        MarcaUltimoEncoder = medidaencoder;
-      }
       setVelocidad(17);
+      tramo ++;
+      distancia = medidaencoder;
       estado = e::Recto;
     }
   break;
