@@ -161,6 +161,8 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
+  Serial.print(MarcaUltimoEncoder);
+  Serial.print(",");
   Serial.println(valorBrujula);
 }
 
@@ -298,7 +300,7 @@ void loop() {
   break;
 
   case e::Recto:
-    if ((giros == 12) && ((medidaencoder - MarcaUltimoEncoder) >= 1200)) {
+    if ((giros == 1) && ((medidaencoder - MarcaUltimoEncoder) >= 3000)) {
       estado = e::Final;
     }
     if(pixy.ccc.numBlocks){
