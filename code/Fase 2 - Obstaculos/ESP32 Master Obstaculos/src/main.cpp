@@ -446,7 +446,7 @@ void loop() {
       setGiro(-30);
     }
     MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
+    setVelocidad(-20);
     estado = e::Maniobra2;
   break;
 
@@ -465,7 +465,7 @@ void loop() {
     setGiro(23);
     }
     MarcaEncoder = medidaencoder;
-    setVelocidad(15);
+    setVelocidad(20);
     estado = e::Posicionamiento2;
   break;
  
@@ -479,7 +479,7 @@ void loop() {
       setGiro(-23);
     }
     MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
+    setVelocidad(-20);
     estado = Posicionamiento3;
     }
   break;
