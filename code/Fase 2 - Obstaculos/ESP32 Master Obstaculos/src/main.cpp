@@ -49,6 +49,8 @@ long MarcaEncoderTramo = -2000;
 
 bool forward = true;
 
+bool PasadoDerecha = false;
+
 enum e{
   Inicio,
   Recto,
@@ -62,6 +64,9 @@ enum e{
   Posicionamiento2,
   Posicionamiento3,
   Posicionamiento4,
+  ComprobacionPosicion,
+  Centrar1,
+  Centrar2,
   ParadaNoSeQueMasHacer,
   Atras,
   Final
@@ -179,6 +184,32 @@ void medirUltrasonidos(){
   }
 }
 
+bool ComprobarPoscicion(){
+  if (sentidoGiro){
+    if (medidasUltrasonidos[ultraIzquierdo] <= 36){
+      PasadoDerecha = false;
+      return 1;
+    }
+    if (medidasUltrasonidos[ultraIzquierdo] >= 58){
+      PasadoDerecha = true;
+      return 1;
+    }
+    }
+  if (!sentidoGiro){
+    if (medidasUltrasonidos[ultraDerecho] <= 36){
+      PasadoDerecha = true;
+      return 1;
+    }
+    if (medidasUltrasonidos[ultraDerecho] >= 58){
+      PasadoDerecha = false;
+      return 1;
+    }
+    }
+    else{
+      return 0;
+    }
+}
+
 void setup() {
   pixy.init();
 
@@ -238,7 +269,6 @@ void setup() {
   digitalWrite(LED_BUILTIN,HIGH);
 
   
-
   
 
   while (digitalRead(PIN_BOTON));
@@ -360,6 +390,7 @@ void loop() {
           sentidoGiro = true;
           enviarMensaje("Derecha");
         }
+        Serial.println(m);
         LecturaGiro = false;
         MarcaEncoder = medidaencoder;
         setVelocidad(-15);
@@ -430,6 +461,7 @@ void loop() {
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
+      delay(10);
       setVelocidad(13);
       estado = e::Recto;
     }
@@ -460,9 +492,9 @@ void loop() {
 
   case e::Posicionamiento1:
     if (sentidoGiro) {
-    setGiro(-23);
+    setGiro(-20);
     } else {
-    setGiro(23);
+    setGiro(20);
     }
     MarcaEncoder = medidaencoder;
     setVelocidad(20);
@@ -471,25 +503,27 @@ void loop() {
  
 
   case e::Posicionamiento2:
-    if ((medidaencoder - MarcaEncoder) > 50){
+    if ((medidaencoder - MarcaEncoder) > 45){
     setVelocidad(0);
     if (sentidoGiro) {
-      setGiro(23);
+      setGiro(20);
     } else {
-      setGiro(-23);
+      setGiro(-20);
     }
     MarcaEncoder = medidaencoder;
+    delay(20);
     setVelocidad(-20);
     estado = Posicionamiento3;
     }
   break;
  
   case e::Posicionamiento3:
-    if((medidaencoder - MarcaEncoder)< -50){
+    if((medidaencoder - MarcaEncoder)< -45){
       setVelocidad(0);
-      if (abs(ErrorDireccionActual) <= 20){
+      if (abs(ErrorDireccionActual) <= 15){
         AutoGiro = true;
         giros++;
+        delay(20);
         setVelocidad(-15);
         estado = e::Posicionamiento4;
       }else {
@@ -507,6 +541,45 @@ void loop() {
       estado = e::Recto;
     }
   break;
- }
+
+  case e::ComprobacionPosicion:
+    if (ComprobarPoscicion()){
+      AutoGiro = false;
+    if(PasadoDerecha){
+      setGiro(10);
+    }
+    else{
+      setGiro(-10);
+    }
+    setVelocidad(-10);
+    MarcaEncoder = medidaencoder;
+    estado = e::Centrar1;
+    }
+    else{
+      AutoGiro = true;
+      estado = e::Recto;
+    }
+  break;
+  
+  case e::Centrar1:
+  if(MarcaEncoder - medidaencoder >= 50){
+    if(PasadoDerecha){
+      setGiro(-10);
+    }
+    else{
+      setGiro(10);
+    }
+    setVelocidad(10);
+    MarcaEncoder = medidaencoder;
+  }
+  break;
+
+  case e:: Centrar2:
+  if(MarcaEncoder - medidaencoder >=50){
+    setVelocidad(0);
+    estado = e::ComprobacionPosicion;
+  }
+  break;
+ }  
 
 }
