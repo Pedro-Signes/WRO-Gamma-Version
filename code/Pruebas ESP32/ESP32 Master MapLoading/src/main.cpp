@@ -34,6 +34,8 @@ uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 Pixy2 pixy;
 
+bool esquivarDerecha = false;
+
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
@@ -43,29 +45,24 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
+long MarcaUltimoEncoder = 0;
 
 bool forward = true;
 
+int Pista[][2][3];
+byte BlockNumber[4] = {0,0,0,0};
+long blockDistance = 0;
+int tramo = -1;
+
 enum e{
-  Inicio,
   Recto,
-  DecidiendoBloque,
-  Esquivar1,
-  Esquivar2,
-  Esquivar3,
-  DecidiendoGiro,
-  Maniobra1,
-  Maniobra2,
-  Posicionamiento1,
-  Posicionamiento2,
-  Posicionamiento3,
-  Posicionamiento4,
-  ParadaNoSeQueMasHacer,
-  Atras,
-  Final
+  RectoDerecha,
+  RectoIzquierda,
+  GiroCorto,
+  GiroLargo
 };
 
-int estado = e::Inicio;
+int estado = e::Recto;
 
 
 /*void Calibrar(){ // función para calibrar ( revisar )
@@ -188,7 +185,6 @@ void setup() {
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
-  estado = e::Inicio;
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   //Calibrar();
@@ -288,213 +284,23 @@ void loop() {
   
  switch (estado)
   {
-  case e::Inicio:
-    if (medidaencoder >200){
-      setVelocidad(0);
-      estado = e::DecidiendoGiro;
-    }
-  break;
-
   case e::Recto:
-    if(pixy.ccc.numBlocks){
-      for (int i=0; i < pixy.ccc.numBlocks; i++){
-        if(pixy.ccc.blocks[i].m_height > tamano){
-          mayor = i;
-          tamano = pixy.ccc.blocks[i].m_height;
-        }
+    if (BlockNumber[tramo + 1] == 1){                       // Si solo hay un bloque en el tramo
+      if (Pista[tramo + 1][0][2]){                          // Si el bloque es rojo
+        if (!Pista[tramo +1][0][1])                         // Si el bloque está en la izquierda
+          estado = e::GiroLargo;
+      } else {                                              // Si el bloque es verde
+        if (Pista[tramo + 1][0][1])                         // Si el bloque está en la derecha
+          estado = e::GiroCorto;
       }
     }
-    if (tamano > tamanoMinimodeEsquive){
-      setVelocidad(0);
-      delay(50);
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo + 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo - 40;
-      }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(-15);
-      MarcaEncoder = medidaencoder;
-      estado = e::Esquivar1;
-    }
-    if(medidasUltrasonidos[ultraFrontal] <= 30){
-      estado = e::DecidiendoGiro;
-    }
-    if(medidasUltrasonidos[ultraFrontal] <= 10){
-      estado = e::ParadaNoSeQueMasHacer;
+    if (BlockNumber[tramo + 1] == 2){                                                       // Si hay 2 bloques
+      if ((Pista[tramo + 1][0][2] == Pista[tramo + 1][1][2]) && Pista[tramo + 1][0][2]) {   // Si son los 2 rojos
+        
+      }  
     }
   break;
-
-  case e::DecidiendoGiro:
-    if (LecturaGiro){
-
-      pixy.line.getMainFeatures(LINE_VECTOR);
-      delay(100);
-      enviarMensaje(8888);
-
-      enviarMensaje(pixy.line.numVectors);
-      
-      if (pixy.line.numVectors){
-        enviarMensaje(9999);
-        int x0 = pixy.line.vectors[0].m_x0;
-        int y0 = pixy.line.vectors[0].m_y0;
-        int x1 = pixy.line.vectors[0].m_x1;
-        int y1 = pixy.line.vectors[0].m_y1;
-        float m = (y1 - y0);
-        if (m < 0){
-          sentidoGiro = false;
-          enviarMensaje("Izquierda");
-        }else{
-          sentidoGiro = true;
-          enviarMensaje("Derecha");
-        }
-        LecturaGiro = false;
-        MarcaEncoder = medidaencoder;
-        setVelocidad(-15);
-        estado = e::Atras;
-      }
-    }else {
-        setVelocidad(0);
-        delay(20);
-        estado = e::Maniobra1;
-    }
-    delay(1000);
-  break;
-
-  case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 190){
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(17);
-      estado = e::Recto;
-    }
-  break;
-
-  case e::Final:
-    if((medidaencoder - MarcaEncoder) > 500){
-      setVelocidad(0);
-    }
-  break;
-
-  case e::ParadaNoSeQueMasHacer:
-    setVelocidad(0);
-    estado = e::DecidiendoGiro;
-  break;
-
-  case e::Esquivar1:
-    if ((MarcaEncoder - medidaencoder) >= 50 ){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo - 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo + 80;
-      }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(13);
-      estado = e::Esquivar2;
-    }
-  break;
-
-  case e::Esquivar2:
-    if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo + 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo - 80;
-      }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      estado = e::Esquivar3;
-    }
-  break;
+  }
   
-  case e::Esquivar3:
-    if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo - 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo + 40;
-      }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(13);
-      estado = e::Recto;
-    }
-  break;
-
-
-  case e::Maniobra1:
-    AutoGiro = false;
-    if (sentidoGiro) {
-      direccionObjetivo = direccionObjetivo - 90;
-      setGiro(30);
-    } else {
-      direccionObjetivo = direccionObjetivo + 90;
-      setGiro(-30);
-    }
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
-    estado = e::Maniobra2;
-  break;
-
-  case e::Maniobra2:
-    if((medidaencoder - MarcaEncoder)<-100){
-      setVelocidad(0);
-      estado = e::Posicionamiento1;
-    }  
-  break;
-
-
-  case e::Posicionamiento1:
-    if (sentidoGiro) {
-    setGiro(-23);
-    } else {
-    setGiro(23);
-    }
-    MarcaEncoder = medidaencoder;
-    setVelocidad(15);
-    estado = e::Posicionamiento2;
-  break;
- 
-
-  case e::Posicionamiento2:
-    if ((medidaencoder - MarcaEncoder) > 50){
-    setVelocidad(0);
-    if (sentidoGiro) {
-      setGiro(23);
-    } else {
-      setGiro(-23);
-    }
-    MarcaEncoder = medidaencoder;
-    setVelocidad(-15);
-    estado = Posicionamiento3;
-    }
-  break;
- 
-  case e::Posicionamiento3:
-    if((medidaencoder - MarcaEncoder)< -50){
-      setVelocidad(0);
-      if (abs(ErrorDireccionActual) <= 20){
-        AutoGiro = true;
-        setVelocidad(-15);
-        estado = e::Posicionamiento4;
-      }else {
-        estado = e::Posicionamiento1;
-      }
-    }
-  break;
-  
-  case e::Posicionamiento4:
-    if (medidasUltrasonidos[ultraTrasero] < 15) {
-      setVelocidad(0);
-      delay(50);
-      setVelocidad(17);
-      estado = e::Recto;
-    }
-  break;
- }
 
 }
