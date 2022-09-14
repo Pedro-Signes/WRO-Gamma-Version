@@ -6,7 +6,7 @@
 #include <WiFiUdp.h>
 #include <Pixy2.h>
 
-
+#define cameraWidth 78
 #define tamanoMinimodeEsquive 55
 #define GreenSignature 1
 #define RedSignature 2
@@ -15,8 +15,7 @@
 
 float valorBrujula = 0;
 float offset;
-int tramo = -1;
-int giros = 0;
+bool AutoGiro = true;
 bool sentidoGiro = true;
 bool LecturaGiro = true;
 
@@ -24,15 +23,17 @@ int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0; 
 
+int giros = 0;
 bool GiroRealizado = true;
 bool PrimeraParada = true;
 bool SegundaParada = true;
-bool AutoGiro = true;
 
 uint32_t Duracion_de_la_muestra = 0;
 
 MPU9250 mpu;
 Pixy2 pixy;
+
+bool esquivarDerecha = false;
 
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
@@ -43,36 +44,33 @@ byte ultraTrasero = 3;
 
 long medidaencoder = 0;
 long MarcaEncoder = 0;
+long MarcaUltimoEncoder = 0;
 
 bool forward = true;
 
 // Map Saving
-byte Bloques[][2][3];
-byte NumeroBloques[4] = {0, 0, 0, 0};
-long distancia;
 
+int Pista[][2][3];
+byte BlockNumber[4] = {0,0,0,0};
+long blockDistance = 0;
+int tramo = -1;
 
-
-byte posicion(byte bloqueN, byte tramoN){
-  byte res = 0;
-  for (byte n = 0; n < tramoN; n++){
-    res = res + NumeroBloques[n];
+byte nextBlock(byte tramo){
+  if (!BlockNumber[tramo]){
+    return 0;
+  } else {
+    return 1;
   }
-  if (bloqueN == 1){
-    return res;
-  } else return res + 1;
 }
-
 
 enum e{
   Inicio,
   Recto,
-  DecidiendoBloque,
-  Esquivar1,
+  Esquivar1, // Esquivar Bloques
   Esquivar2,
   Esquivar3,
   DecidiendoGiro,
-  Maniobra1,
+  Maniobra1, // Girar
   Maniobra2,
   Posicionamiento1,
   Posicionamiento2,
@@ -198,7 +196,6 @@ void setup() {
 
   Serial.begin(115200);
 
-
   pinMode(PIN_BOTON ,INPUT_PULLUP);
 
   pinMode(LED_BUILTIN,OUTPUT);
@@ -251,9 +248,6 @@ void setup() {
 
   digitalWrite(LED_BUILTIN,HIGH);
 
-  
-
-  
 
   while (digitalRead(PIN_BOTON));
   setEnable(1);
@@ -314,6 +308,9 @@ void loop() {
   break;
 
   case e::Recto:
+    if ((giros == 12) && ((medidaencoder - MarcaUltimoEncoder) >= 1200)) {
+      estado = e::Final;
+    }
     if(pixy.ccc.numBlocks){
       for (int i=0; i < pixy.ccc.numBlocks; i++){
         if(pixy.ccc.blocks[i].m_height > tamano){
@@ -321,15 +318,29 @@ void loop() {
           tamano = pixy.ccc.blocks[i].m_height;
         }
       }
-    }
+    } 
     if (tamano > tamanoMinimodeEsquive){
       setVelocidad(0);
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo + 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        esquivarDerecha = true;
+        Pista[tramo][nextBlock(tramo)][2] = 0;
         direccionObjetivo = direccionObjetivo - 40;
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+        esquivarDerecha = false;
+        Pista[tramo][nextBlock(tramo)][2] = 1;
+        direccionObjetivo = direccionObjetivo + 40;
       }
+      if (pixy.ccc.blocks[mayor].m_x > cameraWidth/2){        // Si el bloque está a la derecha
+        Pista[tramo][nextBlock(tramo)][1] = 1;
+      } else {                                                // Si está a la izquierda
+        Pista[tramo][nextBlock(tramo)][1] = 0;
+      }
+      Pista[tramo][nextBlock(tramo)][0] = blockDistance;
+      Serial.print(Pista[tramo][nextBlock(tramo)][0]);
+      Serial.print(Pista[tramo][nextBlock(tramo)][1]);
+      Serial.print(Pista[tramo][nextBlock(tramo)][2]);
+      BlockNumber[tramo] ++;
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
       setVelocidad(-15);
@@ -390,9 +401,8 @@ void loop() {
   break;
 
   case e::Final:
-    if((medidaencoder - MarcaEncoder) > 500){
-      setVelocidad(0);
-    }
+    setVelocidad(0);
+    //setEnable(0);
   break;
 
   case e::ParadaNoSeQueMasHacer:
@@ -402,10 +412,10 @@ void loop() {
 
   case e::Esquivar1:
     if ((MarcaEncoder - medidaencoder) >= 50 ){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        direccionObjetivo = direccionObjetivo - 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        direccionObjetivo = direccionObjetivo + 80;
+      if (esquivarDerecha) {
+        direccionObjetivo = direccionObjetivo - 0;
+      } else {
+        direccionObjetivo = direccionObjetivo + 0;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -418,9 +428,9 @@ void loop() {
 
   case e::Esquivar2:
     if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      } else {
         direccionObjetivo = direccionObjetivo - 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -431,9 +441,9 @@ void loop() {
   
   case e::Esquivar3:
     if(abs(ErrorDireccionActual) <= 5){
-      if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+      if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo - 40;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
+      } else {
         direccionObjetivo = direccionObjetivo + 40;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -509,9 +519,13 @@ void loop() {
     if (medidasUltrasonidos[ultraTrasero] < 15) {
       setVelocidad(0);
       delay(50);
-      setVelocidad(17);
+      giros ++;
       tramo ++;
-      distancia = medidaencoder;
+      if (giros == 12){
+        MarcaUltimoEncoder = medidaencoder;
+      }
+      blockDistance = medidaencoder;
+      setVelocidad(17);
       estado = e::Recto;
     }
   break;
