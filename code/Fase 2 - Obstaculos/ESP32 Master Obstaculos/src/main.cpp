@@ -352,7 +352,7 @@ void loop() {
         int y0 = pixy.line.vectors[0].m_y0;
         int x1 = pixy.line.vectors[0].m_x1;
         int y1 = pixy.line.vectors[0].m_y1;
-        float m = (y1 - y0);
+        float m = (y1 - y0)/(x1 - x0);
         if (m < 0){
           sentidoGiro = false;
           enviarMensaje("Izquierda");
