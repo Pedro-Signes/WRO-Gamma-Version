@@ -269,7 +269,10 @@ void setup() {
   digitalWrite(LED_BUILTIN,HIGH);
 
   
+<<<<<<< Updated upstream
   
+=======
+>>>>>>> Stashed changes
 
   while (digitalRead(PIN_BOTON));
   setEnable(1);
