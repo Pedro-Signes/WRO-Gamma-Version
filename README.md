@@ -44,7 +44,7 @@ Moving on to the Arduino Nano, it is connected to the whole motor, servo, ultras
 
 Then it is worth highlighting the Pixy 2.0, which already has a program to detect objects and their colors. However, the camera has to indicate some parameters in the form of assignments, which the ESP32 will then receive and with them it can make decisions.
 
-Finally, it is worth mentioning the four ultrasounds that the robot poses, since these indicate the distance that it has in front, to the sides, and behind. This data will reach the ESP32 through the system explained previously, and with them the ESP32 will make different decisions.
+Finally, it is worth mentioning the four ultrasounds that the robot poses, since these indicate the distance that it has in front, to the sides, and behind. This data will reach the ESP32 through the system explained previously, and with it the ESP32 will make different decisions.
 
   
 ![FotoEquipo](https://user-images.githubusercontent.com/100376253/175772085-2c6c82bf-9e69-456e-927b-e3cf1254dc0f.jpeg)
