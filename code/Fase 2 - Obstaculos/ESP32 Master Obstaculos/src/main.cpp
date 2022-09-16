@@ -355,7 +355,7 @@ void loop() {
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
-    if((medidasUltrasonidos[ultraFrontal] <= 30) && ((medidaencoder - MarcaEncoderTramo) >= 1300)){
+    if((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1300)){
       estado = e::DecidiendoGiro;
     }
     else if(medidasUltrasonidos[ultraFrontal] <= 15){
