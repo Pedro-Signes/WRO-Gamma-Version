@@ -524,7 +524,7 @@ void loop() {
  
 
   case e::Posicionamiento2:
-    if ((medidaencoder - MarcaEncoder) > 45){
+    if ((medidaencoder - MarcaEncoder) >= 45) {
     delay(10);
     setVelocidad(0);
     if (sentidoGiro) {
@@ -540,7 +540,7 @@ void loop() {
   break;
  
   case e::Posicionamiento3:
-    if((medidaencoder - MarcaEncoder)< -45){
+    if((medidaencoder - MarcaEncoder) <= -40){
       delay(10);
       setVelocidad(0);
       if (abs(ErrorDireccionActual) <= 15){
@@ -572,9 +572,8 @@ void loop() {
         direccionObjetivo = direccionObjetivo + 23;
         setVelocidad(10);
         estado = e::Centrar1;
-      }
-      else{
-        direccionObjetivo = direccionObjetivo- 23;
+      } else {
+        direccionObjetivo = direccionObjetivo - 23;
         setVelocidad(10);
         estado = e::Centrar1;
       }
