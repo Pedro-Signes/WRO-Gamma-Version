@@ -224,41 +224,6 @@ void enviarMensaje(int numero){
 }*/
 
 
-void EnviarTelemetria(){
-  static uint32_t prev_ms4 = millis();
-  if (millis()> prev_ms4) {
-    Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(medidasUltrasonidos[ultraFrontal]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraDerecho]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraIzquierdo]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidasUltrasonidos[ultraTrasero]).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidaencoder - MarcaEncoder).c_str());
-  Udp.printf(";");
-  Udp.printf(String(estado).c_str());
-  Udp.printf(";");
-  Udp.printf(String(90*vuelta).c_str());
-  Udp.printf(";");
-  Udp.printf(String(valorBrujula).c_str());
-  Udp.printf(";");
-  Udp.printf(String(medidaencoder).c_str());
-  Udp.printf(";");
-  Udp.printf(String(ErrorDireccionAnterior).c_str());
-  Udp.printf(";");
-  Udp.printf(String(ErrorDireccionActual).c_str());
-  Udp.printf(";");
-  Udp.printf(String(giros).c_str());
-  Udp.printf(";");
-  Udp.printf(String(sentidoGiro).c_str());
-  Udp.endPacket();
-  prev_ms4 = millis() + 10;
-  }
- }
-
 void loop() {
   
   static uint32_t prev_ms = millis();
@@ -267,7 +232,6 @@ void loop() {
       prev_ms = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
       ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      EnviarTelemetria();
       if(ErrorDireccionAnterior != ErrorDireccionActual){
         setGiro(ErrorDireccionActual);
         ErrorDireccionAnterior = ErrorDireccionActual;
@@ -295,7 +259,7 @@ void loop() {
  switch (estado)
  {
  case e::Inico:
-  setVelocidad(20);
+  setVelocidad(25);
   if(medidasUltrasonidos[ultraFrontal] < 90){
     estado = e::DecidiendoGiroPrimero;
   }
@@ -313,7 +277,7 @@ void loop() {
   break;
 
  case e::RectoLento:
-  setVelocidad(17);
+  setVelocidad(25);
   if(medidasUltrasonidos[ultraFrontal] < 90){
         estado = e::DecidiendoGiro;
       }
@@ -335,7 +299,7 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(13);
+  setVelocidad(15);
   if (medidasUltrasonidos[ultraFrontal] <= 45){
     setVelocidad(0);
     if (PrimeraParada){

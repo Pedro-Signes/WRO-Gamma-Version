@@ -57,6 +57,7 @@ enum e{
   Esquivar1, // Esquivar Bloques
   Esquivar2,
   Esquivar3,
+  Esquivar4,
   DecidiendoGiro,
   Maniobra1, // Girar
   Maniobra2,
@@ -67,6 +68,7 @@ enum e{
   ComprobacionPosicion,
   Centrar1,
   Centrar2,
+  Centrar3,
   ParadaNoSeQueMasHacer,
   Atras,
   Final
@@ -326,14 +328,14 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (medidaencoder >200){
+    if (medidaencoder > 400){
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
   break;
 
   case e::Recto:
-    if ((giros == 2) && ((medidaencoder - MarcaEncoderTramo) >= 1100)) {
+    if ((giros == 12) && ((medidaencoder - MarcaEncoderTramo) >= 1100)) {
       estado = e::Final;
     }
     if(pixy.ccc.numBlocks){
@@ -360,10 +362,10 @@ void loop() {
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
-    if((medidasUltrasonidos[ultraFrontal] <= 30) && ((medidaencoder - MarcaEncoderTramo) >= 2200)){
+    if((medidasUltrasonidos[ultraFrontal] <= 30) && ((medidaencoder - MarcaEncoderTramo) >= 1300)){
       estado = e::DecidiendoGiro;
     }
-    if(medidasUltrasonidos[ultraFrontal] <= 20){
+    else if(medidasUltrasonidos[ultraFrontal] <= 15){
       setVelocidad(0);
       MarcaEncoder = medidaencoder;
       setVelocidad(-15);
@@ -381,23 +383,30 @@ void loop() {
       
       if (pixy.line.numVectors){
         enviarMensaje(9999);
-        int x0 = pixy.line.vectors[0].m_x0;
-        int y0 = pixy.line.vectors[0].m_y0;
-        int x1 = pixy.line.vectors[0].m_x1;
-        int y1 = pixy.line.vectors[0].m_y1;
-        float m = (y1 - y0)/(x1 - x0);
+        float x0 = pixy.line.vectors[0].m_x0;
+        float y0 = pixy.line.vectors[0].m_y0;
+        float x1 = pixy.line.vectors[0].m_x1;
+        float y1 = pixy.line.vectors[0].m_y1;
+        float m = (y1 - y0)*(x1 - x0);
         if (m < 0){
           sentidoGiro = false;
           enviarMensaje("Izquierda");
-        }else{
+          LecturaGiro = false;
+          MarcaEncoder = medidaencoder;
+          setVelocidad(-15);
+          estado = e::Atras;
+        }else if(m > 0){
           sentidoGiro = true;
           enviarMensaje("Derecha");
+          LecturaGiro = false;
+          MarcaEncoder = medidaencoder;
+          setVelocidad(-15);
+          estado = e::Atras;
+        }
+        else{
+          enviarMensaje("No detecta linea");
         }
         Serial.println(m);
-        LecturaGiro = false;
-        MarcaEncoder = medidaencoder;
-        setVelocidad(-15);
-        estado = e::Atras;
       }
     }else {
         setVelocidad(0);
@@ -456,7 +465,7 @@ void loop() {
   break;
   
   case e::Esquivar3:
-    if(abs(ErrorDireccionActual) <= 5){
+    if(abs(ErrorDireccionActual) <= 10){
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo - 40;
       } else {
@@ -466,9 +475,24 @@ void loop() {
       setGiro(ErrorDireccionActual);
       delay(10);
       setVelocidad(13);
-      estado = e::Recto;
+      if ((medidaencoder - MarcaEncoderTramo) >= 1200){
+        estado = e::Recto;
+      } else {
+      estado = e::Esquivar4;
+      }
     }
   break;
+
+  case e::Esquivar4:
+    if(abs(ErrorDireccionActual) <= 10){
+      setVelocidad(0);
+      delay(10);
+      MarcaEncoder = medidaencoder;
+      setVelocidad(-13);
+      estado = e::Atras;
+    }
+  break;
+
 
 
   case e::Maniobra1:
@@ -500,6 +524,7 @@ void loop() {
     setGiro(20);
     }
     MarcaEncoder = medidaencoder;
+    delay(10);
     setVelocidad(20);
     estado = e::Posicionamiento2;
   break;
@@ -507,6 +532,7 @@ void loop() {
 
   case e::Posicionamiento2:
     if ((medidaencoder - MarcaEncoder) > 45){
+    delay(10);
     setVelocidad(0);
     if (sentidoGiro) {
       setGiro(20);
@@ -522,6 +548,7 @@ void loop() {
  
   case e::Posicionamiento3:
     if((medidaencoder - MarcaEncoder)< -45){
+      delay(10);
       setVelocidad(0);
       if (abs(ErrorDireccionActual) <= 15){
         AutoGiro = true;
@@ -536,52 +563,58 @@ void loop() {
   break;
   
   case e::Posicionamiento4:
-    if (medidasUltrasonidos[ultraTrasero] < 15) {
+    if (medidasUltrasonidos[ultraTrasero] <= 15) {
       setVelocidad(0);
       delay(50);
       MarcaEncoderTramo = medidaencoder;
       setVelocidad(17);
-      estado = e::Recto;
+      estado = e::ComprobacionPosicion;
     }
   break;
 
   case e::ComprobacionPosicion:
+    setVelocidad(0);
     if (ComprobarPoscicion()){
-      AutoGiro = false;
-    if(PasadoDerecha){
-      setGiro(10);
+      if(PasadoDerecha){
+        direccionObjetivo = direccionObjetivo + 23;
+      }
+      else{
+        direccionObjetivo = direccionObjetivo- 23;
+      }
+      setVelocidad(10);
+      estado = e::Centrar1;
     }
     else{
-      setGiro(-10);
-    }
-    setVelocidad(-10);
-    MarcaEncoder = medidaencoder;
-    estado = e::Centrar1;
-    }
-    else{
+      setVelocidad(17);
       AutoGiro = true;
       estado = e::Recto;
     }
   break;
   
   case e::Centrar1:
-  if(MarcaEncoder - medidaencoder >= 50){
+  if(abs(ErrorDireccionActual) <= 10){
     if(PasadoDerecha){
-      setGiro(-10);
-    }
-    else{
-      setGiro(10);
+      direccionObjetivo = direccionObjetivo - 23;
+    } else {
+      direccionObjetivo = direccionObjetivo + 23;
     }
     setVelocidad(10);
-    MarcaEncoder = medidaencoder;
   }
   break;
 
   case e:: Centrar2:
-  if(MarcaEncoder - medidaencoder >=50){
+  if(abs(ErrorDireccionActual) <= 10){
     setVelocidad(0);
-    estado = e::ComprobacionPosicion;
+    delay(20);
+    setVelocidad(-13);
+    estado = e::Centrar3;
   }
+  break;
+
+  case e::Centrar3:
+    if (medidasUltrasonidos[ultraTrasero] <= 15){
+      estado = e::ComprobacionPosicion;
+    }
   break;
  }  
 
