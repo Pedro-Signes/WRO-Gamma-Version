@@ -355,7 +355,7 @@ void loop() {
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
-    if((medidasUltrasonidos[ultraFrontal] <= 30) && ((medidaencoder - MarcaEncoderTramo) >= 1300)){
+    if((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1300)){
       estado = e::DecidiendoGiro;
     }
     else if(medidasUltrasonidos[ultraFrontal] <= 15){
@@ -517,8 +517,8 @@ void loop() {
     setGiro(20);
     }
     MarcaEncoder = medidaencoder;
-    delay(50);
-    setVelocidad(15);
+    delay(10);
+    setVelocidad(20);
     estado = e::Posicionamiento2;
   break;
  
@@ -533,8 +533,8 @@ void loop() {
       setGiro(-20);
     }
     MarcaEncoder = medidaencoder;
-    delay(100);
-    setVelocidad(-15);
+    delay(20);
+    setVelocidad(-20);
     estado = Posicionamiento3;
     }
   break;
@@ -546,7 +546,7 @@ void loop() {
       if (abs(ErrorDireccionActual) <= 15){
         AutoGiro = true;
         giros++;
-        delay(100);
+        delay(20);
         setVelocidad(-15);
         estado = e::Posicionamiento4;
       }else {
@@ -560,7 +560,7 @@ void loop() {
       setVelocidad(0);
       delay(50);
       MarcaEncoderTramo = medidaencoder;
-      setVelocidad(15);
+      setVelocidad(17);
       estado = e::ComprobacionPosicion;
     }
   break;
