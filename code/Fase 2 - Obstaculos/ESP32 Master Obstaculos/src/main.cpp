@@ -186,30 +186,29 @@ void medirUltrasonidos(){
   }
 }
 
-bool ComprobarPoscicion(){
-  if (sentidoGiro){
-    if (medidasUltrasonidos[ultraIzquierdo] <= 36){
+bool ComprobarPoscicion() {
+  if (sentidoGiro) {
+    if (medidasUltrasonidos[ultraIzquierdo] <= 36) {
       PasadoDerecha = false;
       return 1;
-    }
-    if (medidasUltrasonidos[ultraIzquierdo] >= 58){
+    } else if (medidasUltrasonidos[ultraIzquierdo] >= 58) {
       PasadoDerecha = true;
       return 1;
+    } else {
+      return 0;
     }
-    }
-  if (!sentidoGiro){
+  }
+  else {
     if (medidasUltrasonidos[ultraDerecho] <= 36){
       PasadoDerecha = true;
       return 1;
-    }
-    if (medidasUltrasonidos[ultraDerecho] >= 58){
+    } else if (medidasUltrasonidos[ultraDerecho] >= 58){
       PasadoDerecha = false;
       return 1;
-    }
-    }
-    else{
+    } else {
       return 0;
     }
+  }
 }
 
 void setup() {
