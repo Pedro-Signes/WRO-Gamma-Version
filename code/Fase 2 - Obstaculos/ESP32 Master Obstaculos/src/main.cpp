@@ -517,8 +517,8 @@ void loop() {
     setGiro(20);
     }
     MarcaEncoder = medidaencoder;
-    delay(10);
-    setVelocidad(20);
+    delay(50);
+    setVelocidad(15);
     estado = e::Posicionamiento2;
   break;
  
@@ -533,8 +533,8 @@ void loop() {
       setGiro(-20);
     }
     MarcaEncoder = medidaencoder;
-    delay(20);
-    setVelocidad(-20);
+    delay(100);
+    setVelocidad(-15);
     estado = Posicionamiento3;
     }
   break;
@@ -546,7 +546,7 @@ void loop() {
       if (abs(ErrorDireccionActual) <= 15){
         AutoGiro = true;
         giros++;
-        delay(20);
+        delay(100);
         setVelocidad(-15);
         estado = e::Posicionamiento4;
       }else {
@@ -560,7 +560,7 @@ void loop() {
       setVelocidad(0);
       delay(50);
       MarcaEncoderTramo = medidaencoder;
-      setVelocidad(17);
+      setVelocidad(15);
       estado = e::ComprobacionPosicion;
     }
   break;
@@ -570,12 +570,14 @@ void loop() {
     if (ComprobarPoscicion()){
       if(PasadoDerecha){
         direccionObjetivo = direccionObjetivo + 23;
+        setVelocidad(10);
+        estado = e::Centrar1;
       }
       else{
         direccionObjetivo = direccionObjetivo- 23;
+        setVelocidad(10);
+        estado = e::Centrar1;
       }
-      setVelocidad(10);
-      estado = e::Centrar1;
     }
     else{
       setVelocidad(17);
@@ -588,10 +590,13 @@ void loop() {
   if(abs(ErrorDireccionActual) <= 10){
     if(PasadoDerecha){
       direccionObjetivo = direccionObjetivo - 23;
+      setVelocidad(10);
+      estado = e::Centrar2;
     } else {
       direccionObjetivo = direccionObjetivo + 23;
+      setVelocidad(10);
+      estado = e::Centrar2;
     }
-    setVelocidad(10);
   }
   break;
 
