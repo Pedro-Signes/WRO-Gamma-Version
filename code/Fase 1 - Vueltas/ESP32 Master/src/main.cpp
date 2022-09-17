@@ -5,16 +5,6 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-#define CONSOLE_IP "192.168.1.2"
-#define CONSOLE_PORT 4210
-const char* ssid = "ESP32";
-const char* password = "12345678";
-WiFiUDP Udp;
-IPAddress local_ip(192, 168, 1, 1);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-WebServer server(80);
-
 #define PIN_BOTON 13
 
 float valorBrujula = 0;
@@ -156,10 +146,6 @@ void Frenar(byte distancia){
 
 void setup() {
 
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(local_ip, gateway, subnet);
-  server.begin();
-
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
 
@@ -214,15 +200,6 @@ void setup() {
   delay(1000);
 
 }
-
-/*
-void enviarMensaje(int numero){
-  Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  Udp.printf(String(numero).c_str());
-  Udp.endPacket();
-}*/
-
 
 void loop() {
   
