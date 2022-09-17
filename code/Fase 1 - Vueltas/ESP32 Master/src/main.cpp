@@ -254,7 +254,7 @@ void loop() {
   break;
 
  case e::RectoLento:
-  setVelocidad(35);
+  setVelocidad(30);
   if(medidasUltrasonidos[ultraFrontal] <= 100){
         estado = e::DecidiendoGiro;
       }
