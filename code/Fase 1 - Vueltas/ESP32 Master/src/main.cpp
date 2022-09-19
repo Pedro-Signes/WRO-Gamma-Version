@@ -236,8 +236,8 @@ void loop() {
  switch (estado)
  {
  case e::Inico:
-  setVelocidad(25);
-  if(medidasUltrasonidos[ultraFrontal] < 90){
+  setVelocidad(20);
+  if(medidasUltrasonidos[ultraFrontal] < 100){
     estado = e::DecidiendoGiroPrimero;
   }
   break;
@@ -246,16 +246,16 @@ void loop() {
   if(giros ==12){
    estado = e::Final;
   }else{
-    setVelocidad(50);
-    if((medidaencoder - MarcaEncoder) > 375){ //10cm con 120 pasos de encoder
+    setVelocidad(40);
+    if((medidaencoder - MarcaEncoder) > 350){ //10cm con 120 pasos de encoder
       estado = e::RectoLento;
   }}
     
   break;
 
  case e::RectoLento:
-  setVelocidad(30);
-  if(medidasUltrasonidos[ultraFrontal] <= 100){
+  setVelocidad(25);
+  if(medidasUltrasonidos[ultraFrontal] <= 120){
         estado = e::DecidiendoGiro;
       }
   break;
@@ -263,11 +263,11 @@ void loop() {
  case e::DecidiendoGiroPrimero:
   setVelocidad(20);
   
-  if(medidasUltrasonidos[ultraIzquierdo] > 90){
+  if(medidasUltrasonidos[ultraIzquierdo] > 100){
     sentidoGiro = 1;
     Frenar(30);
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] > 90){
+  }else if(medidasUltrasonidos[ultraDerecho] > 100){
     sentidoGiro = -1;
     Frenar(30);
     estado = e::Girando;
@@ -276,8 +276,8 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(15);
-  if (medidasUltrasonidos[ultraFrontal] <= 45){
+  setVelocidad(20);
+  if (medidasUltrasonidos[ultraFrontal] <= 40){
     setVelocidad(0);
     if (PrimeraParada){
       prev_ms5 = millis() + 250;
@@ -290,9 +290,9 @@ void loop() {
       estado = e::Atras;
   }
   }
-  else if(medidasUltrasonidos[ultraIzquierdo] >= 110){
+  else if(medidasUltrasonidos[ultraIzquierdo] >= 120){
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] >= 110){
+  }else if(medidasUltrasonidos[ultraDerecho] >= 120){
     estado = e::Girando;
   }
   break;
@@ -314,7 +314,7 @@ void loop() {
   break;
 
  case e::Final:
-  if((medidaencoder - MarcaEncoder) > 500){
+  if((medidaencoder - MarcaEncoder) > 450){
     setVelocidad(0);
     setEnable(0);
   }
