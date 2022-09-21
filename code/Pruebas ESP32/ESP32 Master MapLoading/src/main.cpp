@@ -79,6 +79,7 @@ void routeDecision() {
 
 
 enum e{
+  Precursor,
   Recto,
   Curva,
   Giro
@@ -306,10 +307,24 @@ void loop() {
   
  switch (estado)
   {
+  case e::Precursor:
+    routeDecision();
+    estado = Route[tramo % 4];
+  break;
+
   case e::Recto:
     setVelocidad(20);
+    estado = e::Giro;
   break;
+
+  case e::Curva:
+    estado = e::Giro;
+  break;
+
+  case e::Giro:
+    estado = Route[tramo % 4];
+  break;
+
   }
   
-
 }
