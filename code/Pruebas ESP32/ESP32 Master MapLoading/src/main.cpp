@@ -49,17 +49,39 @@ long MarcaUltimoEncoder = 0;
 
 bool forward = true;
 
-int Pista[][2][3];
+// Block Saving
+int Map[][2][3];                        // [Tramo] -> 0,1,2,3 ;  [NumeroBloque] -> 0,1 ; [Info] -> 0(x) 1(y) 2(color)
 byte BlockNumber[4] = {0,0,0,0};
 long blockDistance = 0;
 int tramo = -1;
 
+// Map loading
+byte Route[4];
+bool tramoDerecha[4];     // Si hay que hacer el tramo por la derecha (true) o por la izquierda (false)
+
+void routeDecision() {
+  for (byte _tramo = 0; _tramo < 4; _tramo++){
+    if (Map[_tramo][0][2] == RedSignature){                          // Si el bloque es rojo
+      Route[_tramo] = e::Recto;
+      tramoDerecha[_tramo] = true;
+      if (Map[_tramo][1][2] = GreenSignature) {
+        Route[_tramo] = e::Curva;
+      }
+    } else if (Map[_tramo][0][2] == GreenSignature) {                        // Si el bloque es verde
+      Route[_tramo] = e::Recto;
+      tramoDerecha[_tramo] = false;
+      if (Map[_tramo][1][2] = RedSignature) {
+        Route[_tramo] = e::Curva;
+      }
+    }
+  }
+}
+
+
 enum e{
   Recto,
-  RectoDerecha,
-  RectoIzquierda,
-  GiroCorto,
-  GiroLargo
+  Curva,
+  Giro
 };
 
 int estado = e::Recto;
@@ -285,20 +307,7 @@ void loop() {
  switch (estado)
   {
   case e::Recto:
-    if (BlockNumber[tramo + 1] == 1){                       // Si solo hay un bloque en el tramo
-      if (Pista[tramo + 1][0][2]){                          // Si el bloque es rojo
-        if (!Pista[tramo +1][0][1])                         // Si el bloque está en la izquierda
-          estado = e::GiroLargo;
-      } else {                                              // Si el bloque es verde
-        if (Pista[tramo + 1][0][1])                         // Si el bloque está en la derecha
-          estado = e::GiroCorto;
-      }
-    }
-    if (BlockNumber[tramo + 1] == 2){                                                       // Si hay 2 bloques
-      if ((Pista[tramo + 1][0][2] == Pista[tramo + 1][1][2]) && Pista[tramo + 1][0][2]) {   // Si son los 2 rojos
-        
-      }  
-    }
+    setVelocidad(20);
   break;
   }
   

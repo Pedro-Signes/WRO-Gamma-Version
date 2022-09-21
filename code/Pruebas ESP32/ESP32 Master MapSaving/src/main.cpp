@@ -324,11 +324,11 @@ void loop() {
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         esquivarDerecha = true;
-        Pista[tramo][nextBlock(tramo)][2] = 0;
+        Pista[tramo][nextBlock(tramo)][2] = RedSignature;
         direccionObjetivo = direccionObjetivo - 40;
       } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         esquivarDerecha = false;
-        Pista[tramo][nextBlock(tramo)][2] = 1;
+        Pista[tramo][nextBlock(tramo)][2] = GreenSignature;
         direccionObjetivo = direccionObjetivo + 40;
       }
       if (pixy.ccc.blocks[mayor].m_x > cameraWidth/2){        // Si el bloque está a la derecha
