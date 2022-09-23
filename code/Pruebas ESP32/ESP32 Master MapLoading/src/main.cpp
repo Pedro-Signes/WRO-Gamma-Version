@@ -13,9 +13,10 @@
 
 #define PIN_BOTON 13
 
+#define TramosTotales 11 // VueltasTotales * 4 - 1
+
 float valorBrujula = 0;
 float offset;
-int vuelta = 1;
 int giros = 0;
 bool sentidoGiro = true;
 bool LecturaGiro = true;
@@ -50,7 +51,10 @@ long MarcaUltimoEncoder = 0;
 bool forward = true;
 
 // Block Saving
-int Map[][2][3];                        // [Tramo] -> 0,1,2,3 ;  [NumeroBloque] -> 0,1 ; [Info] -> 0(x) 1(y) 2(color)
+int Map[4][2][3] = {
+  {{0,0,RedSignature},{0,0,RedSignature}}
+
+};                        // [Tramo] -> 0,1,2,3 ;  [NumeroBloque] -> 0,1 ; [Info] -> 0(x) 1(y) 2(color)
 byte BlockNumber[4] = {0,0,0,0};
 long blockDistance = 0;
 int tramo = -1;
@@ -65,13 +69,13 @@ void routeDecision() {
       Route[_tramo] = e::Recto;
       tramoDerecha[_tramo] = true;
       if (Map[_tramo][1][2] = GreenSignature) {
-        Route[_tramo] = e::Curva;
+        Route[_tramo] = e::Curva1;
       }
     } else if (Map[_tramo][0][2] == GreenSignature) {                        // Si el bloque es verde
       Route[_tramo] = e::Recto;
       tramoDerecha[_tramo] = false;
       if (Map[_tramo][1][2] = RedSignature) {
-        Route[_tramo] = e::Curva;
+        Route[_tramo] = e::Curva1;
       }
     }
   }
@@ -80,9 +84,14 @@ void routeDecision() {
 
 enum e{
   Precursor,
+  Enlace1,
+  Enlace2,
   Recto,
-  Curva,
-  Giro
+  Curva1,
+  Curva2,
+  Curva3,
+  Giro,
+  Final
 };
 
 int estado = e::Recto;
@@ -96,6 +105,7 @@ int estado = e::Recto;
   mpu.verbose(false);
   saveCalibration();
 }*/
+
 
 
 long medirEncoder() {
@@ -180,6 +190,10 @@ void EnviarTelemetria()
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
   Serial.println(valorBrujula);
+  Serial.print(",");
+  Serial.println(Route[0]);
+  Serial.print(",");
+  Serial.println(tramoDerecha[0]);
 }
 
 void medirUltrasonidos(){
@@ -277,7 +291,7 @@ void loop() {
         if (AutoGiro){
           if (forward){
             setGiro(ErrorDireccionActual);
-          }else setGiro(-ErrorDireccionActual);
+          } else setGiro(-ErrorDireccionActual);
         }
         ErrorDireccionAnterior = ErrorDireccionActual;
         EnviarTelemetria();
@@ -288,9 +302,6 @@ void loop() {
   if (millis()> prev_ms2) {
     prev_ms2 = millis() + 20;
     medirUltrasonidos();
-    if (!LecturaGiro) {
-      pixy.ccc.getBlocks();
-      }
   }
 
   static uint32_t prev_ms3 = millis();
@@ -298,31 +309,91 @@ void loop() {
       prev_ms3 = millis() + 30;
       medidaencoder = medirEncoder();
   }
-
-
-
-  static uint32_t prev_ms6;
-  int mayor = -1;
-  int tamano = 0;
   
  switch (estado)
   {
   case e::Precursor:
     routeDecision();
-    estado = Route[tramo % 4];
+    estado = e::Enlace1;
+  break;
+
+  case e::Enlace1:
+    if (tramoDerecha[tramo]) {
+      direccionObjetivo = direccionObjetivo - 30;
+    } else {
+      direccionObjetivo = direccionObjetivo + 30;
+    }
+    MarcaEncoder = medidaencoder;
+    setVelocidad(20);
+  break;
+
+  case e::Enlace2:
+    if (abs(ErrorDireccionActual) <= 10){
+      if (tramoDerecha[tramo]) {
+        direccionObjetivo = direccionObjetivo + 30;
+      } else {
+        direccionObjetivo = direccionObjetivo - 30;
+      }
+      setVelocidad(0);
+    }
   break;
 
   case e::Recto:
     setVelocidad(20);
-    estado = e::Giro;
+    if (medidaencoder - MarcaEncoder >= 200){
+      if (medidaencoder - MarcaEncoder >= 300){
+        MarcaEncoder = medidaencoder;
+        estado = e::Giro;
+      }
+      if (tramo == TramosTotales){
+        estado = e::Final;
+      }
+    }
   break;
 
-  case e::Curva:
-    estado = e::Giro;
+  case e::Curva1:
+    setVelocidad(20);
+    if (medidaencoder - MarcaEncoder >= 200){
+      if (tramo != TramosTotales){
+        if (tramoDerecha[tramo]){
+        direccionObjetivo = direccionObjetivo + 30;
+      } else {
+        direccionObjetivo = direccionObjetivo - 30;
+      }
+        estado = e::Curva2;
+      } else {
+        estado = e::Final;
+      }
+    }
+  break;
+
+  case e::Curva2:
+    setVelocidad(20);
+    if (abs(ErrorDireccionActual) <= 10){
+      if (tramoDerecha[tramo]){
+        direccionObjetivo = direccionObjetivo - 30;
+      } else {
+        direccionObjetivo = direccionObjetivo + 30;
+      }
+      estado = e::Curva3;
+    }
+  break;
+
+  case e::Curva3:
+    setVelocidad(20);
+    if ((medidaencoder - MarcaEncoder) >= 200){
+      estado = e::Giro;
+    }
   break;
 
   case e::Giro:
+
     estado = Route[tramo % 4];
+  break;
+
+  case e::Final:
+    setVelocidad(0);
+    setEnable(0);
   break;
 
   }
