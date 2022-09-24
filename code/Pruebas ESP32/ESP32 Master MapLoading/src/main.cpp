@@ -325,41 +325,42 @@ void loop() {
     }
     MarcaEncoder = medidaencoder;
     setVelocidad(20);
+    estado = e::Enlace2;
   break;
 
   case e::Enlace2:
-    if (abs(ErrorDireccionActual) <= 10){
+    if (abs(ErrorDireccionActual) <= 10){ // if ((medidaencoder - MarcaEncoder) >= algo) {
       if (tramoDerecha[tramo]) {
         direccionObjetivo = direccionObjetivo + 30;
       } else {
         direccionObjetivo = direccionObjetivo - 30;
       }
-      setVelocidad(0);
+      MarcaEncoder = medidaencoder;
+      setVelocidad(0); // estado = Route[tramo % 4];
     }
   break;
 
   case e::Recto:
     setVelocidad(20);
-    if (medidaencoder - MarcaEncoder >= 200){
-      if (medidaencoder - MarcaEncoder >= 300){
-        MarcaEncoder = medidaencoder;
-        estado = e::Giro;
-      }
+    if (medidaencoder - MarcaEncoder >= 200){   // Revisar numero de encoders
       if (tramo == TramosTotales){
         estado = e::Final;
+      } else if (medidaencoder - MarcaEncoder >= 300){  // Revisar numero de encoders
+        MarcaEncoder = medidaencoder;
+        estado = e::Giro;
       }
     }
   break;
 
   case e::Curva1:
     setVelocidad(20);
-    if (medidaencoder - MarcaEncoder >= 200){
+    if (medidaencoder - MarcaEncoder >= 200){ // Revisar numero de encoders
       if (tramo != TramosTotales){
         if (tramoDerecha[tramo]){
-        direccionObjetivo = direccionObjetivo + 30;
-      } else {
-        direccionObjetivo = direccionObjetivo - 30;
-      }
+          direccionObjetivo = direccionObjetivo + 30;
+        } else {
+          direccionObjetivo = direccionObjetivo - 30;
+        }
         estado = e::Curva2;
       } else {
         estado = e::Final;
@@ -369,25 +370,27 @@ void loop() {
 
   case e::Curva2:
     setVelocidad(20);
-    if (abs(ErrorDireccionActual) <= 10){
+    if (abs(ErrorDireccionActual) <= 10){  // if ((medidaencoder - MarcaEncoder) >= algo) {
       if (tramoDerecha[tramo]){
         direccionObjetivo = direccionObjetivo - 30;
       } else {
         direccionObjetivo = direccionObjetivo + 30;
       }
+      MarcaEncoder = medidaencoder;
       estado = e::Curva3;
     }
   break;
 
   case e::Curva3:
     setVelocidad(20);
-    if ((medidaencoder - MarcaEncoder) >= 200){
+    if ((medidaencoder - MarcaEncoder) >= 200){ // Revisar numero de encoders
       estado = e::Giro;
     }
   break;
 
   case e::Giro:
 
+    MarcaEncoder = medidaencoder;
     estado = Route[tramo % 4];
   break;
 
