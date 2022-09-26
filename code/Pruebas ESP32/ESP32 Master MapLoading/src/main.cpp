@@ -44,11 +44,31 @@ byte ultraIzquierdo = 1;
 byte ultraDerecho = 2;
 byte ultraTrasero = 3;
 
+/*
+enum ultra{
+  Frontal,
+  Izquierdo,
+  Derecho,
+  Trasero
+};*/
+
 long medidaencoder = 0;
 long MarcaEncoder = 0;
 long MarcaUltimoEncoder = 0;
 
 bool forward = true;
+
+enum e{
+  Precursor,
+  Enlace1,
+  Enlace2,
+  Recto,
+  Curva1,
+  Curva2,
+  Curva3,
+  Giro,
+  Final
+};
 
 // Block Saving
 int Map[4][2][3] = {
@@ -81,20 +101,7 @@ void routeDecision() {
   }
 }
 
-
-enum e{
-  Precursor,
-  Enlace1,
-  Enlace2,
-  Recto,
-  Curva1,
-  Curva2,
-  Curva3,
-  Giro,
-  Final
-};
-
-int estado = e::Recto;
+int estado = e::Precursor;
 
 
 /*void Calibrar(){ // función para calibrar ( revisar )
@@ -275,7 +282,7 @@ void setup() {
   delay(1000);
 
 
-  setVelocidad(13);
+  setVelocidad(20);
   delay(500);
 }
 
@@ -314,6 +321,7 @@ void loop() {
   {
   case e::Precursor:
     routeDecision();
+    setVelocidad(20);
     estado = e::Enlace1;
   break;
 
