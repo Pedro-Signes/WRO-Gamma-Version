@@ -1,41 +1,17 @@
-#include <Servo.h>
-
-#define servoMAX 116
-#define servoMIN 52
-#define servoO 84
 #define kp 0.3
 #define kd 2
 
-#define PinConServo 9
 #define PinEnMotor 5
 #define PinDir1Motor 16
 #define PinDir2Motor 17
+#define PinEnable 14
+
+#define PinEncoder 2
 
 bool forward = true;
 
-class CServo{  //maneja el servo
-public:
-  CServo(byte PinServo);
-  void MoverServo(int _angulo);
-  void Setup();
-private:
-  byte _pinServo;
-  Servo Miservo;
-};
-
-CServo::CServo(byte PinServo){
-  _pinServo = PinServo;
-}
-
-void CServo::Setup(){
-  Miservo.attach(_pinServo);
-}
-
-void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
-  _angulo = constrain(_angulo,-32,32);
-  int _ang = map(_angulo, -32, 32, servoMIN, servoMAX);
-  Miservo.write(_ang);
-}
+volatile long encoder = 0;
+volatile long encoderAbsoluto = 0;
 
 class Motor{  
   public:
@@ -98,4 +74,44 @@ void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   }else{
   potencia(int(_potencia));}
   
+}
+
+void encoderISR() {  // función para que funcien el encoder
+  if (forward == true) 
+  {
+    encoder ++;
+    encoderAbsoluto++;
+  }
+  else
+  {
+    encoder --;
+    encoderAbsoluto--;
+  }
+  
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Motor MiMototor(PinEnMotor, PinDir1Motor, PinDir2Motor);
+  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+  pinMode(PinEncoder, INPUT);
+  pinMode(PinEnable,OUTPUT);
+  digitalWrite(PinEnable, true);
+  MiMototor.potencia(40);
+}
+
+static uint32_t prevms = millis();
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  if(millis() > prevms+30)
+  {
+    Serial.print(encoder);
+    encoder = 0;
+    Serial.print(" ; ");
+    Serial.println(encoderAbsoluto);
+    prevms = millis();
+  }
+
 }

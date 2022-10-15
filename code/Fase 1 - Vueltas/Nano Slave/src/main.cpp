@@ -5,12 +5,12 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PinEncoder 2
-#define PinTriggerI 3     //Izquierdo
-#define PinEchoI 8        //Izquierdo
-#define PinTriggerD 7     //Derecha
-#define PinEchoD 6        //Derecha
-#define PinTriggerF 11    //Frontal
-#define PinEchoF 4        //Frontal
+#define PinTriggerI 12     //Izquierdo
+#define PinEchoI 4        //Izquierdo
+#define PinTriggerD 11     //Derecha
+#define PinEchoD 9        //Derecha
+#define PinTriggerF 3    //Frontal
+#define PinEchoF 8        //Frontal
 #define PinTriggerT 13    //Trasero
 #define PinEchoT 15       //Trasero
 #define PinLed 12
@@ -87,8 +87,8 @@ void setup() {
 
   pinMode(PinEnable,OUTPUT);
   digitalWrite(PinEnable,1);
-  pinMode(PinEncoder, INPUT);
   attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+  pinMode(PinEncoder, INPUT);
 
   MiCServo.Setup();
   MiCServo.MoverServo(0);
@@ -198,6 +198,7 @@ void requestEvent() {
   if (requestedData == 1) {
     datoEncoder[0]=encoderAbsoluto & 0xff;
     datoEncoder[1]=(encoderAbsoluto>>8) & 0xff;
+
     datoEncoder[2]=(encoderAbsoluto>>16) & 0xff;
     datoEncoder[3]=(encoderAbsoluto>>24) & 0xff;
     Wire.write(datoEncoder,4);
