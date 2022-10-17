@@ -129,6 +129,29 @@ void medirUltrasonidos(){
   }
 }
 
+void EnviarTelemetria()
+{
+  Serial.print(estado);
+  Serial.print(",");
+  Serial.print(medidasUltrasonidos[ultraFrontal]);
+  Serial.print(",");
+  Serial.print(medidasUltrasonidos[ultraTrasero]);
+  Serial.print(",");
+  Serial.print(medidasUltrasonidos[ultraDerecho]);
+  Serial.print(",");
+  Serial.print(medidasUltrasonidos[ultraIzquierdo]);
+  Serial.print(",");
+  Serial.print(MarcaEncoder);
+  Serial.print(",");
+  Serial.print(medidaencoder);
+  Serial.print(",");
+  Serial.print(medidaencoder - MarcaEncoder);
+  Serial.print(",");
+  Serial.print(direccionObjetivo);
+  Serial.print(",");
+  Serial.println(valorBrujula);
+}
+
 uint32_t prev_ms5;
 void Frenar(byte distancia){
   if (medidasUltrasonidos[ultraFrontal] <= distancia){
@@ -152,7 +175,9 @@ void setup() {
   Wire.begin();
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
+  Serial.begin(115200);
   delay(100);
+
   setEnable(1);
   estado = e::Inico;
   
@@ -193,7 +218,11 @@ void setup() {
 
   digitalWrite(LED_BUILTIN, HIGH);
 
-  while (digitalRead(PIN_BOTON));
+  while (digitalRead(PIN_BOTON)){
+    medirUltrasonidos();
+    EnviarTelemetria();
+    delay(100);
+  };
 
   setEnable(1);
 
@@ -227,6 +256,7 @@ void loop() {
   if (millis()> prev_ms3) {
       prev_ms3 = millis() + 30;
       medidaencoder = medirEncoder();
+      EnviarTelemetria();
   }
 
 

@@ -5,14 +5,14 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PinEncoder 2
-#define PinTriggerI 12     //Izquierdo
-#define PinEchoI 4        //Izquierdo
-#define PinTriggerD 11     //Derecha
-#define PinEchoD 9        //Derecha
-#define PinTriggerF 3    //Frontal
-#define PinEchoF 8        //Frontal
-#define PinTriggerT 13    //Trasero
-#define PinEchoT 15       //Trasero
+#define PinTriggerI 11     //Izquierdo      11
+#define PinEchoI 4        //Izquierdo       4
+#define PinTriggerD 3     //Derecha        3
+#define PinEchoD 8        //Derecha         8
+#define PinTriggerF 12    //Frontal          12
+#define PinEchoF 9        //Frontal         9
+#define PinTriggerT 13    //Trasero         13
+#define PinEchoT 15       //Trasero         15
 #define PinLed 12
 #define PinEnable 14
 

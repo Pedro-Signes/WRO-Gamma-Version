@@ -1,8 +1,8 @@
 #include <Servo.h>
 
-#define servoMAX 116
-#define servoMIN 52
-#define servoO 84
+#define servoMAX 119
+#define servoMIN 70
+#define servo0 90
 #define kp 0.3
 #define kd 2
 
@@ -12,6 +12,8 @@
 #define PinDir2Motor 17
 
 bool forward = true;
+
+byte servoMapMAX = (servo0 - servoMIN); 
 
 class CServo{  //maneja el servo
 public:
@@ -32,8 +34,8 @@ void CServo::Setup(){
 }
 
 void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
-  _angulo = constrain(_angulo,-32,32);
-  int _ang = map(_angulo, -32, 32, servoMIN, servoMAX);
+  _angulo = constrain(_angulo, -servoMapMAX, servoMapMAX);
+  int _ang = map(_angulo, -servoMapMAX, servoMapMAX, servoMIN, servoMAX);
   Miservo.write(_ang);
 }
 
