@@ -74,7 +74,7 @@ long medirEncoder() {
 }
 
 // Devuelve la posición donde hay que poner el servo
-int ErrorDireccion(int bearing, int target){
+int ErrorDireccion(int bearing, int target) {
   int error = bearing - target;
   if (error == 0) return 0;
   if (error > 180) error -= 360;
@@ -266,7 +266,7 @@ void loop() {
  switch (estado)
  {
  case e::Inico:
-  setVelocidad(20);
+  setVelocidad(30);
   if(medidasUltrasonidos[ultraFrontal] < 100){
     estado = e::DecidiendoGiroPrimero;
   }
@@ -276,15 +276,15 @@ void loop() {
   if(giros ==12){
    estado = e::Final;
   }else{
-    setVelocidad(20);
-    if((medidaencoder - MarcaEncoder) > 500){ //10cm con 120 pasos de encoder
+    setVelocidad(100);
+    if((medidaencoder - MarcaEncoder) > 1000){ //10cm con 120 pasos de encoder
       estado = e::RectoLento;
   }}
     
   break;
 
  case e::RectoLento:
-  setVelocidad(20);
+  setVelocidad(50);
   if(medidasUltrasonidos[ultraFrontal] <= 100){
         estado = e::DecidiendoGiro;
       }
@@ -306,12 +306,12 @@ void loop() {
 
 
  case e::DecidiendoGiro:
+  setVelocidad(50);
   if(medidasUltrasonidos[ultraIzquierdo] >= 120){
     estado = e::Girando;
   }else if(medidasUltrasonidos[ultraDerecho] >= 120){
     estado = e::Girando;
   } else {
-  setVelocidad(20);
   if (medidasUltrasonidos[ultraFrontal] <= 40){
     setVelocidad(0);
     if (PrimeraParada){
