@@ -79,7 +79,7 @@ int ErrorDireccion(int bearing, int target){
   if (error == 0) return 0;
   if (error > 180) error -= 360;
   if (error < -180) error += 360;
-  return -3*error;
+  return -1*error;
 }
 
 
@@ -276,16 +276,16 @@ void loop() {
   if(giros ==12){
    estado = e::Final;
   }else{
-    setVelocidad(40);
-    if((medidaencoder - MarcaEncoder) > 350){ //10cm con 120 pasos de encoder
+    setVelocidad(20);
+    if((medidaencoder - MarcaEncoder) > 500){ //10cm con 120 pasos de encoder
       estado = e::RectoLento;
   }}
     
   break;
 
  case e::RectoLento:
-  setVelocidad(25);
-  if(medidasUltrasonidos[ultraFrontal] <= 120){
+  setVelocidad(20);
+  if(medidasUltrasonidos[ultraFrontal] <= 100){
         estado = e::DecidiendoGiro;
       }
   break;
@@ -306,6 +306,11 @@ void loop() {
 
 
  case e::DecidiendoGiro:
+  if(medidasUltrasonidos[ultraIzquierdo] >= 120){
+    estado = e::Girando;
+  }else if(medidasUltrasonidos[ultraDerecho] >= 120){
+    estado = e::Girando;
+  } else {
   setVelocidad(20);
   if (medidasUltrasonidos[ultraFrontal] <= 40){
     setVelocidad(0);
@@ -317,14 +322,10 @@ void loop() {
       PrimeraParada = true;
       MarcaEncoder = medidaencoder;
       setVelocidad(-20);
-      estado = e::Atras;
+      estado = e::Atras;}
   }
   }
-  else if(medidasUltrasonidos[ultraIzquierdo] >= 120){
-    estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] >= 120){
-    estado = e::Girando;
-  }
+  
   break;
 
  case e::Girando:

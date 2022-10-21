@@ -9,8 +9,8 @@
 #define PinEchoI 4        //Izquierdo       4
 #define PinTriggerD 3     //Derecha        3
 #define PinEchoD 8        //Derecha         8
-#define PinTriggerF 12    //Frontal          12
-#define PinEchoF 9        //Frontal         9
+#define PinTriggerF 7    //Frontal          12
+#define PinEchoF 6        //Frontal         9
 #define PinTriggerT 13    //Trasero         13
 #define PinEchoT 15       //Trasero         15
 #define PinLed 12
@@ -73,10 +73,10 @@ void colors(byte mainPixel, byte currentPixel, int sense){
   }
 }
 
-Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
-Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
-Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
+Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,7000UL);//Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,7000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,7000UL);//derechos
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,7000UL);//Trasero
 
 void LecturaUltrasonidos();
 
@@ -84,6 +84,7 @@ void setup() {
   pixels.begin();
   delay(100);
   pixels.clear();
+  Serial.begin(115200);
 
   pinMode(PinEnable,OUTPUT);
   digitalWrite(PinEnable,1);
@@ -226,10 +227,10 @@ ISR(TIMER2_COMPB_vect){
 
 void LecturaUltrasonidos(){
   if (forward) {
-  distanceFrontal=ultrasonicFrontal.read();
-  distanceIzquierdo=ultrasonicIzquierdo.read();
-  distanceDerecho=ultrasonicDerecho.read();
+  distanceFrontal = ultrasonicFrontal.read();
+  distanceIzquierdo = ultrasonicIzquierdo.read();
+  distanceDerecho = ultrasonicDerecho.read();
   } else {
-  distanceTrasero=ultrasonicTrasero.read();
+  distanceTrasero = ultrasonicTrasero.read();
   }
 }
