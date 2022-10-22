@@ -2,7 +2,7 @@
 
 #define servoMAX 119
 #define servoMIN 70
-#define servo0 90
+#define servo0 95
 #define kp 0.3
 #define kd 2
 
@@ -12,8 +12,6 @@
 #define PinDir2Motor 17
 
 bool forward = true;
-
-byte servoMapMAX = (servo0 - servoMIN); 
 
 class CServo{  //maneja el servo
 public:
@@ -34,8 +32,8 @@ void CServo::Setup(){
 }
 
 void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
-  _angulo = constrain(_angulo, -servoMapMAX, servoMapMAX);
-  int _ang = map(_angulo, -servoMapMAX, servoMapMAX, servoMIN, servoMAX);
+  int _ang = map(_angulo, -100, 100, servoMIN, servoMAX);
+  _ang = constrain(_ang, servoMIN, servoMAX);
   Miservo.write(_ang);
 }
 
@@ -70,23 +68,25 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
 
 }
 
-
-
 void Motor::potencia(int pot){
   // (PinDir1Motor,LOW) ; (PinDir2Motor,HIGH) -> Hacia atrás
   // Inversamente propocional en el tema del sentido
   // Arranrque = 140
-  if(pot>=0){
+  if(pot>0){
     forward=true;
     digitalWrite(PinDir1Motor,HIGH);
     digitalWrite(PinDir2Motor,LOW);
     analogWrite(PinEnMotor, pot);
   }
-  else{
+  else if(pot < 0){
     forward=false;
     digitalWrite(PinDir1Motor,LOW);
     digitalWrite(PinDir2Motor,HIGH);
     analogWrite(PinEnMotor, -pot);
+  }else{
+    analogWrite(PinEnMotor,200);
+    digitalWrite(PinDir1Motor,LOW);
+    digitalWrite(PinDir2Motor,LOW);
   }
  
 }
@@ -98,6 +98,7 @@ void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   if (velocidadTarget==0){
     potencia(0);
   }else{
-  potencia(int(_potencia));}
+    potencia(int(_potencia))
+  ;}
   
 }

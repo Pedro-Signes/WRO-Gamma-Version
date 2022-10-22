@@ -182,7 +182,9 @@ void receiveEvent(int howMany) {
     }else if(requestedData == 4){     //RX servo
       int argumentoDegiro;
       argumentoDegiro = Wire.read();
-      argumentoDegiro = argumentoDegiro*(Wire.read()-1);
+      if (!Wire.read()){
+        argumentoDegiro = -argumentoDegiro;
+      }
       MiCServo.MoverServo(argumentoDegiro);
 
     }else if(requestedData == 5){

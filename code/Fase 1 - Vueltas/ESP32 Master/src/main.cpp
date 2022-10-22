@@ -7,6 +7,10 @@
 
 #define PIN_BOTON 13
 
+#define servoKP 4
+#define servoKD 20
+int _setAngleAnterior;    // Valor del _setAngle anterior
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -79,7 +83,7 @@ int ErrorDireccion(int bearing, int target) {
   if (error == 0) return 0;
   if (error > 180) error -= 360;
   if (error < -180) error += 360;
-  return -1*error;
+  return -error;
 }
 
 
@@ -93,13 +97,13 @@ void setEnable(int motrorEnable){
 void setGiro(int posicionServo){
   Wire.beginTransmission(4);
   Wire.write(4);
- 
+  posicionServo = constrain(posicionServo, -255, 255); // Para restringir el argumento a un Byte
   if(posicionServo<0){
     Wire.write(-posicionServo);
     Wire.write(0);
   }else{
     Wire.write(posicionServo);
-    Wire.write(2);
+    Wire.write(1);
   }
   Wire.endTransmission();
 }
@@ -129,6 +133,21 @@ void medirUltrasonidos(){
   }
 }
 
+void EnviarServoTelemetria()
+{
+  Serial.print(estado);
+  Serial.print(",");
+  Serial.print(direccionObjetivo);
+  Serial.print(",");
+  Serial.print(ErrorDireccionActual);
+  Serial.print(",");
+  Serial.print(ErrorDireccionAnterior);
+  Serial.print(",");
+  Serial.print(_setAngleAnterior);
+  Serial.print(",");
+  Serial.println(valorBrujula);
+}
+
 void EnviarTelemetria()
 {
   Serial.print(estado);
@@ -148,6 +167,8 @@ void EnviarTelemetria()
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
   Serial.print(direccionObjetivo);
+  Serial.print(",");
+  Serial.print(_setAngleAnterior);
   Serial.print(",");
   Serial.println(valorBrujula);
 }
@@ -203,6 +224,8 @@ void setup() {
 
   //loadCalibration();
 
+  Serial.print("Estado,DirObj,ErrorAct,ErrorAnt,angulo,brujula");
+
   medirUltrasonidos();
    
   int num =0;
@@ -232,33 +255,40 @@ void setup() {
 
 void loop() {
   
-  static uint32_t prev_ms = millis();
+  static uint32_t prev_ms_brujula = millis();
   if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms;
-      prev_ms = millis();
+      Duracion_de_la_muestra = millis() - prev_ms_brujula;
+      prev_ms_brujula = millis();
       valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-      ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      if(ErrorDireccionAnterior != ErrorDireccionActual){
-        setGiro(ErrorDireccionActual);
-        ErrorDireccionAnterior = ErrorDireccionActual;
-      }
   }
-    
-  static uint32_t prev_ms2 = millis();
-  if (millis()> prev_ms2) {
+  
+  static uint32_t prev_ms_direccion = millis();
+  if (millis()> prev_ms_direccion) {
+    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula, direccionObjetivo), -127, 127);
+    int _setAngle = servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior);
+    if(_setAngle != _setAngleAnterior) {
+      setGiro(_setAngle);
+      _setAngleAnterior = _setAngle;
+    }
+    //EnviarServoTelemetria();
+    ErrorDireccionAnterior = ErrorDireccionActual;
+    prev_ms_direccion = millis() + 10;
+   
+  }
 
-    prev_ms2 = millis() + 20;
+  static uint32_t prev_ms_ultrasonidos = millis();
+  if (millis()> prev_ms_ultrasonidos) {
+    prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
    
   }
 
-  static uint32_t prev_ms3 = millis();
-  if (millis()> prev_ms3) {
-      prev_ms3 = millis() + 30;
+  static uint32_t prev_ms_encoder = millis();
+  if (millis()> prev_ms_encoder) {
+      prev_ms_encoder = millis() + 30;
       medidaencoder = medirEncoder();
       EnviarTelemetria();
   }
-
 
 
   static uint32_t prev_ms6;
@@ -273,14 +303,14 @@ void loop() {
   break;
 
  case e::RectoRapido:
-  if(giros ==12){
+  if(giros == 12){
    estado = e::Final;
   }else{
     setVelocidad(100);
     if((medidaencoder - MarcaEncoder) > 1000){ //10cm con 120 pasos de encoder
       estado = e::RectoLento;
-  }}
-    
+  }
+  }    
   break;
 
  case e::RectoLento:
@@ -336,7 +366,7 @@ void loop() {
     GiroRealizado = false;
     giros++;
   }
-  if(abs(ErrorDireccionActual) < 15){
+  if(sentidoGiro * (direccionObjetivo - valorBrujula) < 10){
     GiroRealizado = true;
     MarcaEncoder = medirEncoder();
     estado = e::RectoRapido;
@@ -345,7 +375,7 @@ void loop() {
   break;
 
  case e::Final:
-  if((medidaencoder - MarcaEncoder) > 450){
+  if((medidaencoder - MarcaEncoder) > 10){
     setVelocidad(0);
     setEnable(0);
   }
