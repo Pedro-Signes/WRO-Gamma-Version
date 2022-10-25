@@ -38,6 +38,8 @@ int velocidadObjetivo = 0;
 int encodertotal = 0;
 uint32_t tiempo = 0;
 
+uint32_t UltraMedir = 0;
+
 bool ESP_prepared = false;
 
 void receiveEvent(int howMany);
@@ -63,6 +65,7 @@ void encoderISR() {  // función para que funcien el encoder
 }
 
 void descartarErrores();
+void enviar();
 
 void colors(byte mainPixel, byte currentPixel, int sense){
   if (mainPixel == currentPixel){
@@ -149,6 +152,13 @@ void loop() {
   if (millis() > tiempo){
     LecturaUltrasonidos();
     descartarErrores();
+    enviar();
+    if (UltraMedir == 2){
+      UltraMedir = 0;
+    }
+    else{
+      UltraMedir++;
+    }
     tiempo = millis() + 7;
   }
 
@@ -237,11 +247,18 @@ ISR(TIMER2_COMPB_vect){
 
 void LecturaUltrasonidos(){
   if (forward) {
-  distanceFrontal = ultrasonicFrontal.read();
-  distanceIzquierdo = ultrasonicIzquierdo.read();
-  distanceDerecho = ultrasonicDerecho.read();
-  } else {
-  distanceTrasero = ultrasonicTrasero.read();
+    if (UltraMedir == 0){
+      distanceFrontal = ultrasonicFrontal.read();
+    }
+    else if (UltraMedir ==1){
+      distanceIzquierdo = ultrasonicDerecho.read();
+    }
+    else if (UltraMedir ==2){
+    distanceDerecho = ultrasonicIzquierdo.read();
+    }
+  } 
+  else {
+    distanceTrasero = ultrasonicTrasero.read();
   }
 }
 
@@ -262,4 +279,14 @@ void descartarErrores(){
     prevdistanceIzquierdo = distanceIzquierdo;
     distanceIzquierdo = ultrasonicIzquierdo.read();
   }
+}
+
+void enviar(){
+  Serial.print(distanceFrontal);
+  Serial.print(";");
+  Serial.print(distanceTrasero);
+  Serial.print(";");
+  Serial.print(distanceDerecho);
+  Serial.print(";");
+  Serial.println(distanceIzquierdo);
 }
