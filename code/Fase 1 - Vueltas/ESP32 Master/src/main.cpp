@@ -185,7 +185,7 @@ void EnviarTelemetria()
 }
 
 uint32_t prev_ms5;
-void Frenar(byte distancia){
+void Frenar(byte distancia) {
   if (medidasUltrasonidos[ultraFrontal] <= distancia){
     setVelocidad(0);
     if (PrimeraParada){
