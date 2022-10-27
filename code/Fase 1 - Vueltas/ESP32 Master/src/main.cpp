@@ -150,26 +150,37 @@ void EnviarServoTelemetria()
 
 void EnviarTelemetria()
 {
+  Serial.print("\t");
   Serial.print(estado);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraFrontal]);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraTrasero]);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraDerecho]);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraIzquierdo]);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(MarcaEncoder);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidaencoder);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(direccionObjetivo);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(_setAngleAnterior);
   Serial.print(",");
+  Serial.print("\t");
   Serial.println(valorBrujula);
 }
 
@@ -323,11 +334,11 @@ void loop() {
  case e::DecidiendoGiroPrimero:
   setVelocidad(20);
   
-  if(medidasUltrasonidos[ultraIzquierdo] > 100){
+  if(medidasUltrasonidos[ultraIzquierdo] > 110){
     sentidoGiro = 1;
     Frenar(30);
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] > 100){
+  }else if(medidasUltrasonidos[ultraDerecho] > 110){
     sentidoGiro = -1;
     Frenar(30);
     estado = e::Girando;
@@ -337,25 +348,26 @@ void loop() {
 
  case e::DecidiendoGiro:
   setVelocidad(20);
-  if(medidasUltrasonidos[ultraIzquierdo] >= 120){
+  if ((medidasUltrasonidos[ultraIzquierdo] >= 120 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] >= 120){
+  } else if ((medidasUltrasonidos[ultraDerecho] >= 120) && (sentidoGiro == -1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;
   } else {
-  if (medidasUltrasonidos[ultraFrontal] <= 40){
-    setVelocidad(0);
-    if (PrimeraParada){
-      prev_ms5 = millis() + 250;
-      PrimeraParada = false;
+    if (medidasUltrasonidos[ultraFrontal] <= 40) {
+      setVelocidad(0);
+      if (PrimeraParada) {
+        prev_ms5 = millis() + 250;
+        PrimeraParada = false;
+      }
+      if (millis()> prev_ms5) {
+        PrimeraParada = true;
+        MarcaEncoder = medidaencoder;
+        setVelocidad(-20);
+        estado = e::Atras;
+      }
     }
-    if (millis()> prev_ms5) {
-      PrimeraParada = true;
-      MarcaEncoder = medidaencoder;
-      setVelocidad(-20);
-      estado = e::Atras;}
-  }
   }
   
   break;
