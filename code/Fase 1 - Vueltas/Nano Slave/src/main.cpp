@@ -251,10 +251,10 @@ void LecturaUltrasonidos(){
       distanceFrontal = ultrasonicFrontal.read();
     }
     else if (UltraMedir ==1){
-      distanceIzquierdo = ultrasonicDerecho.read();
+      distanceIzquierdo = ultrasonicIzquierdo.read();
     }
     else if (UltraMedir ==2){
-    distanceDerecho = ultrasonicIzquierdo.read();
+    distanceDerecho = ultrasonicDerecho.read();
     }
   } 
   else {
