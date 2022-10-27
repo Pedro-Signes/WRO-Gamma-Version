@@ -24,21 +24,27 @@ volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
 volatile float velocidad;
 byte datoEncoder[4];
+
 int distanceFrontal;
 int distanceIzquierdo;
 int distanceDerecho;
 int distanceTrasero;
+int prevdistanceFrontal;
+int prevdistanceIzquierdo;
+int prevdistanceDerecho;
+int prevdistanceTrasero;
+
 int velocidadObjetivo = 0;
 int encodertotal = 0;
 uint32_t tiempo = 0;
+
+uint32_t UltraMedir = 0;
 
 bool ESP_prepared = false;
 
 void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
-
-uint8_t medidaArray[3];
 
 CServo MiCServo(PinConServo);
 Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
@@ -58,6 +64,9 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
+void descartarErrores();
+void enviar();
+
 void colors(byte mainPixel, byte currentPixel, int sense){
   if (mainPixel == currentPixel){
     pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
@@ -73,10 +82,10 @@ void colors(byte mainPixel, byte currentPixel, int sense){
   }
 }
 
-Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,7000UL);//Delantero
-Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,7000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,7000UL);//derechos
-Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,7000UL);//Trasero
+Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,8000UL);//Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,8000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,8000UL);//derechos
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,8000UL);//Trasero
 
 void LecturaUltrasonidos();
 
@@ -99,6 +108,7 @@ void setup() {
   Wire.onRequest(requestEvent); // register event
 
   LecturaUltrasonidos();
+
   
   byte mainpixel = 0;
   int sense = 1;
@@ -141,7 +151,15 @@ void loop() {
   //put your main code here, to run repeatedly:
   if (millis() > tiempo){
     LecturaUltrasonidos();
-    tiempo = millis() + 5;
+    descartarErrores();
+    enviar();
+    if (UltraMedir == 2){
+      UltraMedir = 0;
+    }
+    else{
+      UltraMedir++;
+    }
+    tiempo = millis() + 7;
   }
 
   if (millis() > tiempo){
@@ -229,10 +247,46 @@ ISR(TIMER2_COMPB_vect){
 
 void LecturaUltrasonidos(){
   if (forward) {
-  distanceFrontal = ultrasonicFrontal.read();
-  distanceIzquierdo = ultrasonicIzquierdo.read();
-  distanceDerecho = ultrasonicDerecho.read();
-  } else {
-  distanceTrasero = ultrasonicTrasero.read();
+    if (UltraMedir == 0){
+      distanceFrontal = ultrasonicFrontal.read();
+    }
+    else if (UltraMedir ==1){
+      distanceIzquierdo = ultrasonicDerecho.read();
+    }
+    else if (UltraMedir ==2){
+    distanceDerecho = ultrasonicIzquierdo.read();
+    }
+  } 
+  else {
+    distanceTrasero = ultrasonicTrasero.read();
   }
+}
+
+void descartarErrores(){
+  if (abs(distanceFrontal - prevdistanceFrontal) > 80){
+    prevdistanceFrontal = distanceFrontal;
+    distanceFrontal = ultrasonicFrontal.read();
+  }
+  if (abs(distanceTrasero - prevdistanceTrasero) > 80){
+    prevdistanceTrasero = distanceTrasero;
+    distanceTrasero = ultrasonicTrasero.read();
+  }
+  if (abs(distanceDerecho - prevdistanceDerecho) > 80){
+    prevdistanceDerecho = distanceDerecho;
+    distanceDerecho = ultrasonicDerecho.read();
+  }
+  if (abs(distanceIzquierdo - prevdistanceIzquierdo) > 80){
+    prevdistanceIzquierdo = distanceIzquierdo;
+    distanceIzquierdo = ultrasonicIzquierdo.read();
+  }
+}
+
+void enviar(){
+  Serial.print(distanceFrontal);
+  Serial.print(";");
+  Serial.print(distanceTrasero);
+  Serial.print(";");
+  Serial.print(distanceDerecho);
+  Serial.print(";");
+  Serial.println(distanceIzquierdo);
 }
