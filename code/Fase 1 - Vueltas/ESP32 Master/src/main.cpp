@@ -116,7 +116,7 @@ void setVelocidad(int velocidad){
     Wire.write(0);
   }else{
     Wire.write(velocidad);
-    Wire.write(2);
+    Wire.write(1);
   }
   Wire.endTransmission();
 }

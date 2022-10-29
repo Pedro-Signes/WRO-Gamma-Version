@@ -66,25 +66,25 @@ void encoderISR() {  // función para que funcien el encoder
 void descartarErrores();
 void enviar();
 
-void colors(byte mainPixel, byte currentPixel, int sense){
-  if (mainPixel == currentPixel){
+void colors(byte mainPixel, byte currentPixel, int sense) {
+  if (mainPixel == currentPixel) {
     pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
-  }
-  else if (((currentPixel - mainPixel) * sense) == -1){
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -1) {
     pixels.setPixelColor(currentPixel, pixels.Color(12,0,0));
-  }
-  else if (((currentPixel - mainPixel) * sense) == -2){
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -2) {
     pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
-  }
+  } 
   else {
     pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
   }
 }
 
-Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,9000UL);//Delantero
-Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,9000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,9000UL);//derechos
-Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,9000UL);//Trasero
+Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,9000UL);          //Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,9000UL);        //izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,9000UL);          //derechos
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,9000UL);          //Trasero
 
 void LecturaUltrasonidos();
 
@@ -107,29 +107,27 @@ void setup() {
   Wire.onRequest(requestEvent); // register event
 
   LecturaUltrasonidos();
-
   
   byte mainpixel = 0;
   int sense = 1;
-  while(!ESP_prepared){
-    for(int i=0; i<NUMPIXELS; i++) {
+  while (!ESP_prepared) {
+    for (int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i,sense);
-      if (ESP_prepared){
+      if (ESP_prepared) {
         break;
       }
     }
     pixels.show();
     delay(120);
-    if (mainpixel == NUMPIXELS - 1){
-    sense = -1;}
-    if (mainpixel == 0){
+    if (mainpixel == NUMPIXELS - 1) {
+      sense = -1;
+    } else if (mainpixel == 0) {
       sense = 1;
     }
     mainpixel = mainpixel + sense;
   }
 
   for(int i=0; i<NUMPIXELS; i++) {
-
     pixels.setPixelColor(i, pixels.Color(100, 100, 100));
   }
   pixels.show();
@@ -148,39 +146,38 @@ void loop() {
   //put your main code here, to run repeatedly:
 
   static uint32_t prev_ms_ultrasonic;
-  if (millis() > prev_ms_ultrasonic){
+  if (millis() > prev_ms_ultrasonic) {
     LecturaUltrasonidos();
     descartarErrores();
     enviar();
-    if (UltraMedir == 2){
+    if (UltraMedir == 2) {
       UltraMedir = 0;
-    }
-    else{
+    } else {
       UltraMedir++;
     }
     prev_ms_ultrasonic = millis() + 7;
   }
 
   static uint32_t prev_ms_speed;
-  if (millis() > prev_ms_speed){
+  if (millis() > prev_ms_speed) {
     MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
     prev_ms_speed = millis() + 15;
   }
 
-  if(!ESP_prepared){
+  if (!ESP_prepared) {
     static byte mainpixel = 0;
     static int sense = 1;
     for(int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i,sense);
-      if (ESP_prepared){
+      if (ESP_prepared) {
         break;
       }
     }
     pixels.show();
     delay(120);
-    if (mainpixel == NUMPIXELS - 1){
-    sense = -1;}
-    if (mainpixel == 0){
+    if (mainpixel == NUMPIXELS - 1) {
+    sense = -1;
+    } else if (mainpixel == 0) {
       sense = 1;
     }
     mainpixel = mainpixel + sense;
@@ -190,27 +187,27 @@ void loop() {
 
 void receiveEvent(int howMany) {
 
-  while(howMany > 0 ){
+  while (howMany > 0 ) {
     requestedData = Wire.read();
     howMany--;
-    if (requestedData == 3){
+    if (requestedData == 3) {
       velocidadObjetivo = Wire.read();
-      velocidadObjetivo = velocidadObjetivo*(Wire.read()-1);
-
-    }else if(requestedData == 4){     //RX servo
+      if (!Wire.read()) {
+        velocidadObjetivo = -velocidadObjetivo;
+      }
+    } else if(requestedData == 4) {     //RX servo
       int argumentoDegiro;
       argumentoDegiro = Wire.read();
-      if (!Wire.read()){
+      if (!Wire.read()) {
         argumentoDegiro = -argumentoDegiro;
       }
       MiCServo.MoverServo(argumentoDegiro);
 
-    }else if(requestedData == 5){
+    } else if(requestedData == 5) {
       int valor_enable = Wire.read();
-      digitalWrite(PinEnable,valor_enable);
+      digitalWrite(PinEnable, valor_enable);
       ESP_prepared = valor_enable;
     }
-
   }
 }
 
@@ -233,35 +230,31 @@ void requestEvent() {
 
 }
 
-ISR(TIMER2_COMPB_vect){        
-  if (lecturaEncoder==true){                  
+ISR(TIMER2_COMPB_vect) {        
+  if (lecturaEncoder == true) {                  
     velocidad = encoder;
     encoder = 0;
-    lecturaEncoder= false;
-  }
-  else{
-    lecturaEncoder=true;
+    lecturaEncoder = false;
+  } else {
+    lecturaEncoder = true;
   }
 }
 
-void LecturaUltrasonidos(){
+void LecturaUltrasonidos() {
   if (forward) {
-    if (UltraMedir == 0){
+    if (UltraMedir == 0) {
       distanceFrontal = ultrasonicFrontal.read();
-    }
-    else if (UltraMedir ==1){
+    } else if (UltraMedir == 1) {
+      distanceDerecho = ultrasonicDerecho.read();
+    } else {
       distanceIzquierdo = ultrasonicIzquierdo.read();
     }
-    else if (UltraMedir ==2){
-    distanceDerecho = ultrasonicDerecho.read();
-    }
-  } 
-  else {
+  } else {
     distanceTrasero = ultrasonicTrasero.read();
   }
 }
 
-void descartarErrores(){
+void descartarErrores() {
   if (distanceFrontal > 150) {
     if (discard[0]) {
       distanceFrontal = prevdistanceFrontal;
@@ -300,12 +293,12 @@ void descartarErrores(){
   prevdistanceIzquierdo = distanceIzquierdo;
 }
 
-void enviar(){
+void enviar() {
   Serial.print(distanceFrontal);
-  Serial.print(";");
+  Serial.print("; ");
   Serial.print(distanceTrasero);
-  Serial.print(";");
+  Serial.print("; ");
   Serial.print(distanceDerecho);
-  Serial.print(";");
+  Serial.print("; ");
   Serial.println(distanceIzquierdo);
 }
