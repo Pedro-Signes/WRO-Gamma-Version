@@ -36,9 +36,8 @@ int prevdistanceTrasero;
 bool discard[4] = {true, true, true, true};
 
 int velocidadObjetivo = 0;
-int encodertotal = 0;
 
-uint32_t UltraMedir = 0;
+byte UltraMedir = 0;
 
 bool ESP_prepared = false;
 
@@ -237,7 +236,6 @@ void requestEvent() {
 ISR(TIMER2_COMPB_vect){        
   if (lecturaEncoder==true){                  
     velocidad = encoder;
-    encodertotal= encodertotal + encoder;
     encoder = 0;
     lecturaEncoder= false;
   }
@@ -296,6 +294,10 @@ void descartarErrores(){
       discard[3] = true;
     }
   }
+  prevdistanceFrontal = distanceFrontal;
+  prevdistanceTrasero = distanceTrasero;
+  prevdistanceDerecho = distanceDerecho;
+  prevdistanceIzquierdo = distanceIzquierdo;
 }
 
 void enviar(){
