@@ -319,7 +319,7 @@ void loop() {
    estado = e::Final;
   }else{
     setVelocidad(100);
-    if((medidaencoder - MarcaEncoder) > 600){ //10cm con 120 pasos de encoder
+    if((medidaencoder - MarcaEncoder) > 400){ //10cm con 120 pasos de encoder
       estado = e::DecidiendoGiro;
   }
   }    
