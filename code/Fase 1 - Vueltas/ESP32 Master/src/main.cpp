@@ -315,11 +315,12 @@ void loop() {
 
  case e::RectoRapido:
   if(giros == 12){
+    setVelocidad(1);
    estado = e::Final;
   }else{
     setVelocidad(100);
-    if((medidaencoder - MarcaEncoder) > 1000){ //10cm con 120 pasos de encoder
-      estado = e::RectoLento;
+    if((medidaencoder - MarcaEncoder) > 600){ //10cm con 120 pasos de encoder
+      estado = e::DecidiendoGiro;
   }
   }    
   break;
@@ -347,11 +348,11 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(20);
-  if ((medidasUltrasonidos[ultraIzquierdo] >= 120 ) && (sentidoGiro == 1)) {
+  setVelocidad(40);
+  if ((medidasUltrasonidos[ultraIzquierdo] >= 145 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;
-  } else if ((medidasUltrasonidos[ultraDerecho] >= 120) && (sentidoGiro == -1)) {
+  } else if ((medidasUltrasonidos[ultraDerecho] >= 145) && (sentidoGiro == -1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;
   } else {
@@ -373,7 +374,7 @@ void loop() {
   break;
 
  case e::Girando:
- if (medidaencoder - MarcaEncoder > 200){
+ if (medidaencoder - MarcaEncoder > 30){
     if(GiroRealizado){
       direccionObjetivo = sentidoGiro*90*vuelta;
       vuelta++;
@@ -391,7 +392,7 @@ void loop() {
   break;
 
  case e::Final:
-  if((medidaencoder - MarcaEncoder) > 10){
+  if((medidaencoder - MarcaEncoder) > 5){
     setVelocidad(0);
     setEnable(0);
   }

@@ -82,10 +82,10 @@ void colors(byte mainPixel, byte currentPixel, int sense){
   }
 }
 
-Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,8000UL);//Delantero
-Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,8000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,8000UL);//derechos
-Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,8000UL);//Trasero
+Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,9000UL);//Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,9000UL);//izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,9000UL);//derechos
+Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,9000UL);//Trasero
 
 void LecturaUltrasonidos();
 
