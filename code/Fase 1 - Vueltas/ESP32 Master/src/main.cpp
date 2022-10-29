@@ -36,8 +36,11 @@ byte ultraDerecho = 2;
 byte ultraTrasero = 3;
 
 long medidaencoder = 0;
+long prev_medidaencoder = 0;
 long MarcaEncoder = 0;
 
+long posicionX = 0;
+long posicionY = 0;
 
 enum e{
   RectoRapido,
@@ -181,7 +184,13 @@ void EnviarTelemetria()
   Serial.print(_setAngleAnterior);
   Serial.print(",");
   Serial.print("\t");
-  Serial.println(valorBrujula);
+  Serial.print(valorBrujula);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(posicionX);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.println(posicionY);
 }
 
 void setup() {
@@ -253,13 +262,22 @@ void loop() {
   
   static uint32_t prev_ms_brujula = millis();
   if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms_brujula;
-      prev_ms_brujula = millis();
-      valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
+    Duracion_de_la_muestra = millis() - prev_ms_brujula;
+    prev_ms_brujula = millis();
+    valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
+  }
+
+  static uint32_t prev_ms_posicion = millis();
+  if (millis() > prev_ms_posicion) {
+    int dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula);
+    int dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula);
+    posicionX = posicionX + dx;
+    posicionY = posicionY + dy;
+    prev_ms_posicion = millis() + 15;
   }
   
   static uint32_t prev_ms_direccion = millis();
-  if (millis()> prev_ms_direccion) {
+  if (millis() > prev_ms_direccion) {
     ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula, direccionObjetivo), -127, 127);
     int _setAngle = servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior);
     if(_setAngle != _setAngleAnterior) {
@@ -269,21 +287,19 @@ void loop() {
     //EnviarServoTelemetria();
     ErrorDireccionAnterior = ErrorDireccionActual;
     prev_ms_direccion = millis() + 10;
-   
   }
 
   static uint32_t prev_ms_ultrasonidos = millis();
   if (millis()> prev_ms_ultrasonidos) {
     prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
-   
   }
 
   static uint32_t prev_ms_encoder = millis();
   if (millis()> prev_ms_encoder) {
-      prev_ms_encoder = millis() + 30;
-      medidaencoder = medirEncoder();
-      EnviarTelemetria();
+    prev_ms_encoder = millis() + 30;
+    medidaencoder = medirEncoder();
+    EnviarTelemetria();
   }
 
 
