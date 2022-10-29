@@ -184,21 +184,6 @@ void EnviarTelemetria()
   Serial.println(valorBrujula);
 }
 
-uint32_t prev_ms5;
-void Frenar(byte distancia) {
-  if (medidasUltrasonidos[ultraFrontal] <= distancia){
-    setVelocidad(0);
-    if (PrimeraParada){
-      prev_ms5 = millis() + 400;
-      PrimeraParada = false;
-    }
-    if (millis()> prev_ms5) {
-      PrimeraParada = true;
-      estado = e::Atras;
-  }
-  }
-}
-
 void setup() {
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
@@ -334,16 +319,15 @@ void loop() {
 
  case e::DecidiendoGiroPrimero:
   setVelocidad(20);
-  
-  if(medidasUltrasonidos[ultraIzquierdo] > 110){
+  if (medidasUltrasonidos[ultraIzquierdo] > 110) {
     sentidoGiro = 1;
-    Frenar(30);
     estado = e::Girando;
-  }else if(medidasUltrasonidos[ultraDerecho] > 110){
+  } else if (medidasUltrasonidos[ultraDerecho] > 110) {
     sentidoGiro = -1;
-    Frenar(30);
     estado = e::Girando;
-  }else Frenar(15);
+  }
+  if (medidasUltrasonidos[ultraFrontal] < 40) {
+  }
   break;
 
 
@@ -355,20 +339,7 @@ void loop() {
   } else if ((medidasUltrasonidos[ultraDerecho] >= 145) && (sentidoGiro == -1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;
-  } else {
-    if (medidasUltrasonidos[ultraFrontal] <= 40) {
-      setVelocidad(0);
-      if (PrimeraParada) {
-        prev_ms5 = millis() + 250;
-        PrimeraParada = false;
-      }
-      if (millis()> prev_ms5) {
-        PrimeraParada = true;
-        MarcaEncoder = medidaencoder;
-        setVelocidad(-20);
-        estado = e::Atras;
-      }
-    }
+  } else if (medidasUltrasonidos[ultraFrontal] <= 40) {
   }
   
   break;
@@ -397,27 +368,5 @@ void loop() {
     setEnable(0);
   }
   break;
-
-
- case e::Atras:
-  if((MarcaEncoder - medidaencoder) >= 190){
-   setVelocidad(0);
-   MarcaEncoder=medidaencoder + 1000;
-   if (SegundaParada){
-    prev_ms6 = millis() + 250;
-    SegundaParada = false;
-   }
-   if (millis()> prev_ms6) {
-    SegundaParada = true;
-    if (sentidoGiro==0){
-      estado= e::DecidiendoGiro;
-    }else{
-      setVelocidad(20);
-      estado = e::Girando;
-    }
-   }
-  }
-  break;
-}
 
 }
