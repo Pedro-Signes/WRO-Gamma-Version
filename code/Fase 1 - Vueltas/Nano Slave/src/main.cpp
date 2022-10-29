@@ -33,10 +33,10 @@ int prevdistanceFrontal;
 int prevdistanceIzquierdo;
 int prevdistanceDerecho;
 int prevdistanceTrasero;
+bool discard[4] = {true, true, true, true};
 
 int velocidadObjetivo = 0;
 int encodertotal = 0;
-uint32_t tiempo = 0;
 
 uint32_t UltraMedir = 0;
 
@@ -146,10 +146,10 @@ void setup() {
 }
 
 void loop() {
-
-  
   //put your main code here, to run repeatedly:
-  if (millis() > tiempo){
+
+  static uint32_t prev_ms_ultrasonic;
+  if (millis() > prev_ms_ultrasonic){
     LecturaUltrasonidos();
     descartarErrores();
     enviar();
@@ -159,12 +159,13 @@ void loop() {
     else{
       UltraMedir++;
     }
-    tiempo = millis() + 7;
+    prev_ms_ultrasonic = millis() + 7;
   }
 
-  if (millis() > tiempo){
+  static uint32_t prev_ms_speed;
+  if (millis() > prev_ms_speed){
     MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
-    tiempo = millis() + 15;
+    prev_ms_speed = millis() + 15;
   }
 
   if(!ESP_prepared){
@@ -263,21 +264,37 @@ void LecturaUltrasonidos(){
 }
 
 void descartarErrores(){
-  if (abs(distanceFrontal - prevdistanceFrontal) > 80){
-    prevdistanceFrontal = distanceFrontal;
-    distanceFrontal = ultrasonicFrontal.read();
+  if (distanceFrontal > 150) {
+    if (discard[0]) {
+      distanceFrontal = prevdistanceFrontal;
+      discard[0] = false;
+    } else {
+      discard[0] = true;
+    }
   }
-  if (abs(distanceTrasero - prevdistanceTrasero) > 80){
-    prevdistanceTrasero = distanceTrasero;
-    distanceTrasero = ultrasonicTrasero.read();
+  if (distanceTrasero > 150) {
+    if (discard[1]) {
+      distanceTrasero = prevdistanceTrasero;
+      discard[1] = false;
+    } else {
+      discard[1] = true;
+    }
   }
-  if (abs(distanceDerecho - prevdistanceDerecho) > 80){
-    prevdistanceDerecho = distanceDerecho;
-    distanceDerecho = ultrasonicDerecho.read();
+  if (distanceDerecho > 150) {
+    if (discard[2]) {
+      distanceDerecho = prevdistanceDerecho;
+      discard[2] = false;
+    } else {
+      discard[2] = true;
+    }
   }
-  if (abs(distanceIzquierdo - prevdistanceIzquierdo) > 80){
-    prevdistanceIzquierdo = distanceIzquierdo;
-    distanceIzquierdo = ultrasonicIzquierdo.read();
+  if (distanceIzquierdo > 150) {
+    if (discard[3]) {
+      distanceIzquierdo = prevdistanceIzquierdo;
+      discard[3] = false;
+    } else {
+      discard[3] = true;
+    }
   }
 }
 
