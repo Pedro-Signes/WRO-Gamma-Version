@@ -204,7 +204,6 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  setEnable(1);
   estado = e::Inico;
   
   //Calibrar();
@@ -302,9 +301,6 @@ void loop() {
     EnviarTelemetria();
   }
 
-
-  static uint32_t prev_ms6;
-
  switch (estado)
  {
  case e::Inico:
@@ -315,12 +311,12 @@ void loop() {
   break;
 
  case e::RectoRapido:
-  if(giros == 12){
+  if (giros == 12) {
     setVelocidad(1);
    estado = e::Final;
-  }else{
+  } else {
     setVelocidad(100);
-    if((medidaencoder - MarcaEncoder) > 400){ //10cm con 120 pasos de encoder
+    if ((medidaencoder - MarcaEncoder) > 400) { //10cm con 120 pasos de encoder
       estado = e::DecidiendoGiro;
   }
   }    
@@ -343,6 +339,7 @@ void loop() {
     estado = e::Girando;
   }
   if (medidasUltrasonidos[ultraFrontal] < 40) {
+
   }
   break;
 
@@ -385,4 +382,5 @@ void loop() {
   }
   break;
 
+ }
 }
