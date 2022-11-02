@@ -149,7 +149,6 @@ void loop() {
   if (millis() > prev_ms_ultrasonic) {
     LecturaUltrasonidos();
     descartarErrores();
-    enviar();
     if (UltraMedir == 2) {
       UltraMedir = 0;
     } else {
@@ -186,7 +185,6 @@ void loop() {
 
 
 void receiveEvent(int howMany) {
-
   while (howMany > 0 ) {
     requestedData = Wire.read();
     howMany--;
