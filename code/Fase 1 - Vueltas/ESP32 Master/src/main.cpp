@@ -228,8 +228,6 @@ void setup() {
 
   //loadCalibration();
 
-  Serial.print("Estado,DirObj,ErrorAct,ErrorAnt,angulo,brujula");
-
   medirUltrasonidos();
    
   int num =0;

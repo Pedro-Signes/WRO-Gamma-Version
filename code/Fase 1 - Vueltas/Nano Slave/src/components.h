@@ -43,11 +43,11 @@ class Motor{
   void potencia(int pot);
   void corregirVelocidad(int velocidadActual, int velocidadTarget);
   void arrancar();
+  float GetPotencia();
 
   private:
   byte _pinEn;
   byte _pinDir1;
-  float GetPotencia();
   byte _pinDir2;
   float _potencia = 0;
   float _error;

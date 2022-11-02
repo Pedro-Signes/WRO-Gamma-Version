@@ -66,6 +66,17 @@ void encoderISR() {  // función para que funcien el encoder
 void descartarErrores();
 void enviar();
 
+void telemetria() {
+  Serial.print("\t");
+  Serial.print(velocidad);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(velocidadObjetivo);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.println(MiMotor.GetPotencia());
+}
+
 void colors(byte mainPixel, byte currentPixel, int sense) {
   if (mainPixel == currentPixel) {
     pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
@@ -93,9 +104,9 @@ void setup() {
   delay(100);
   pixels.clear();
   Serial.begin(115200);
+  Serial.println("Serial a punto");
 
   pinMode(PinEnable,OUTPUT);
-  digitalWrite(PinEnable,1);
   attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
   pinMode(PinEncoder, INPUT);
 
@@ -160,6 +171,7 @@ void loop() {
   static uint32_t prev_ms_speed;
   if (millis() > prev_ms_speed) {
     MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
+    telemetria();
     prev_ms_speed = millis() + 15;
   }
 
@@ -168,9 +180,6 @@ void loop() {
     static int sense = 1;
     for(int i=0; i<NUMPIXELS; i++) {
       colors(mainpixel,i,sense);
-      if (ESP_prepared) {
-        break;
-      }
     }
     pixels.show();
     delay(120);
