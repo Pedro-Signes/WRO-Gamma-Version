@@ -13,6 +13,10 @@
 
 #define PIN_BOTON 13
 
+#define servoKP 4
+#define servoKD 20
+int _setAngleAnterior;    // Valor del _setAngle anterior
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -106,11 +110,11 @@ int ErrorDireccion(int bearing, int target){
   if (error == 0) return 0;
   if (error > 180) error -= 360;
   if (error < -180) error += 360;
-  return -2*error;
+  return -error;
 }
 
 
-void setEnable(int motrorEnable){
+void setEnable (int motrorEnable){
   Wire.beginTransmission(4);
   Wire.write(5);
   Wire.write(motrorEnable);
@@ -145,7 +149,7 @@ void setVelocidad(int velocidad){
   }
   Wire.endTransmission();
 }
-/*
+
 void enviarMensaje(int numero){
  Serial.println(numero);
 }
@@ -170,7 +174,7 @@ void EnviarTelemetria()
   Serial.print(MarcaEncoderTramo);
   Serial.print(",");
   Serial.println(valorBrujula);
-}*/
+}
 
 void medirUltrasonidos(){
 
@@ -273,46 +277,54 @@ void setup() {
   delay(1000);
 
 
-  setVelocidad(13);
+  setVelocidad(17);
   delay(500);
 }
 
 
 void loop() {
-  static uint32_t prev_ms = millis();
+  static uint32_t prev_ms_brujula = millis();
   if (mpu.update()) {
-      Duracion_de_la_muestra = millis() - prev_ms;
-      prev_ms = millis();
-      valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset)*Duracion_de_la_muestra/1000);
-      ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula,direccionObjetivo),-127,127);
-      if(ErrorDireccionAnterior != ErrorDireccionActual){
-        if (AutoGiro){
-          if (forward){
-            setGiro(ErrorDireccionActual);
-          }else setGiro(-ErrorDireccionActual);
-        }
-        ErrorDireccionAnterior = ErrorDireccionActual;
-      }
+    Duracion_de_la_muestra = millis() - prev_ms_brujula;
+    prev_ms_brujula = millis();
+    valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
   }
+
+  static uint32_t prev_ms_direccion = millis();
+  if (millis() > prev_ms_direccion) {
+    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula, direccionObjetivo),-127,127);
+    int _setAngle = servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior);
+    if(_setAngle != _setAngleAnterior) {
+      if (AutoGiro) {
+        if (forward) {
+          setGiro(_setAngle);
+        } else {
+          setGiro(-_setAngle);
+        }
+        _setAngleAnterior = _setAngle;
+      }
+      ErrorDireccionAnterior = ErrorDireccionActual;
+      prev_ms_direccion = millis() + 10;
+    }    
+  }
+  
     
-  static uint32_t prev_ms2 = millis();
-  if (millis()> prev_ms2) {
-    prev_ms2 = millis() + 20;
+  static uint32_t prev_ms_ultrasonidos = millis();
+  if (millis()> prev_ms_ultrasonidos) {
+    prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
     if (!LecturaGiro) {
       pixy.ccc.getBlocks();
       }
   }
 
-  static uint32_t prev_ms3 = millis();
-  if (millis()> prev_ms3) {
-      prev_ms3 = millis() + 30;
-      medidaencoder = medirEncoder();
+  static uint32_t prev_ms_encoder = millis();
+  if (millis()> prev_ms_encoder) {
+    prev_ms_encoder = millis() + 30;
+    medidaencoder = medirEncoder();
+    EnviarTelemetria();
   }
 
-
-
-  static uint32_t prev_ms6;
   int mayor = -1;
   int tamano = 0;
   
@@ -380,20 +392,17 @@ void loop() {
         float m = (y1 - y0)*(x1 - x0);
         if (m < 0){
           sentidoGiro = false;
-          LecturaGiro = false;
-          MarcaEncoder = medidaencoder;
-          setVelocidad(-15);
-          estado = e::Atras;
         }else if(m > 0){
           sentidoGiro = true;
-          LecturaGiro = false;
-          MarcaEncoder = medidaencoder;
-          setVelocidad(-15);
-          estado = e::Atras;
         }
+        LecturaGiro = false;
+        MarcaEncoder = medidaencoder;
+        setVelocidad(-15);
+        pixy.changeProg("block");
+        estado = e::Atras;
       }
       delay(100);
-    }else {
+    } else {
         setVelocidad(0);
         delay(20);
         estado = e::Maniobra1;
@@ -479,10 +488,10 @@ void loop() {
     AutoGiro = false;
     if (sentidoGiro) {
       direccionObjetivo = direccionObjetivo - 90;
-      setGiro(30);
+      setGiro(50);
     } else {
       direccionObjetivo = direccionObjetivo + 90;
-      setGiro(-30);
+      setGiro(-50);
     }
     MarcaEncoder = medidaencoder;
     setVelocidad(-20);

@@ -364,7 +364,7 @@ void loop() {
       GiroRealizado = false;
       giros++;
     }
-    if(sentidoGiro * (direccionObjetivo - valorBrujula) < 10){
+    if (sentidoGiro * (direccionObjetivo - valorBrujula) < 10){
       GiroRealizado = true;
       MarcaEncoder = medidaencoder;
       estado = e::RectoRapido;
