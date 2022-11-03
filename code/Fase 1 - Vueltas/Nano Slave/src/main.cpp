@@ -223,7 +223,6 @@ void requestEvent() {
   if (requestedData == 1) {
     datoEncoder[0]=encoderAbsoluto & 0xff;
     datoEncoder[1]=(encoderAbsoluto>>8) & 0xff;
-
     datoEncoder[2]=(encoderAbsoluto>>16) & 0xff;
     datoEncoder[3]=(encoderAbsoluto>>24) & 0xff;
     Wire.write(datoEncoder,4);

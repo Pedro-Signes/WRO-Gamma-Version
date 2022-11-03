@@ -39,8 +39,8 @@ long medidaencoder = 0;
 long prev_medidaencoder = 0;
 long MarcaEncoder = 0;
 
-long posicionX = 0;
-long posicionY = 0;
+double posicionX = 0;
+double posicionY = 0;
 
 enum e{
   RectoRapido,
@@ -260,17 +260,17 @@ void loop() {
   static uint32_t prev_ms_brujula = millis();
   if (mpu.update()) {
     Duracion_de_la_muestra = millis() - prev_ms_brujula;
-    prev_ms_brujula = millis();
     valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
+    prev_ms_brujula = millis();
   }
 
   static uint32_t prev_ms_posicion = millis();
   if (millis() > prev_ms_posicion) {
-    int dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula);
-    int dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula);
+    double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
+    double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
     posicionX = posicionX + dx;
     posicionY = posicionY + dy;
-    prev_ms_posicion = millis() + 15;
+    prev_ms_posicion = millis() + 10;
   }
   
   static uint32_t prev_ms_direccion = millis();
@@ -283,7 +283,7 @@ void loop() {
     }
     //EnviarServoTelemetria();
     ErrorDireccionAnterior = ErrorDireccionActual;
-    prev_ms_direccion = millis() + 10;
+    prev_ms_direccion = millis() + 15;
   }
 
   static uint32_t prev_ms_ultrasonidos = millis();
@@ -294,7 +294,8 @@ void loop() {
 
   static uint32_t prev_ms_encoder = millis();
   if (millis()> prev_ms_encoder) {
-    prev_ms_encoder = millis() + 30;
+    prev_ms_encoder = millis() + 20;
+    prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
     EnviarTelemetria();
   }
@@ -313,7 +314,7 @@ void loop() {
     setVelocidad(1);
    estado = e::Final;
   } else {
-    setVelocidad(100);
+    setVelocidad(30);
     if ((medidaencoder - MarcaEncoder) > 400) { //10cm con 120 pasos de encoder
       estado = e::DecidiendoGiro;
   }
@@ -321,14 +322,14 @@ void loop() {
   break;
 
  case e::RectoLento:
-  setVelocidad(20);
+  setVelocidad(30);
   if(medidasUltrasonidos[ultraFrontal] <= 100){
         estado = e::DecidiendoGiro;
       }
   break;
 
  case e::DecidiendoGiroPrimero:
-  setVelocidad(20);
+  setVelocidad(30);
   if (medidasUltrasonidos[ultraIzquierdo] > 110) {
     sentidoGiro = 1;
     estado = e::Girando;
@@ -343,7 +344,7 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(40);
+  setVelocidad(30);
   if ((medidasUltrasonidos[ultraIzquierdo] >= 145 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     estado = e::Girando;

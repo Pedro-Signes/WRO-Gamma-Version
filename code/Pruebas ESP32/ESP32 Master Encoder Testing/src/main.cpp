@@ -224,15 +224,6 @@ void loop() {
     prev_ms_brujula = millis();
     valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
   }
-
-  static uint32_t prev_ms_posicion = millis();
-  if (millis() > prev_ms_posicion) {
-    int dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula);
-    int dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula);
-    posicionX = posicionX + dx;
-    posicionY = posicionY + dy;
-    prev_ms_posicion = millis() + 15;
-  }
   
   static uint32_t prev_ms_direccion = millis();
   if (millis() > prev_ms_direccion) {
@@ -264,7 +255,7 @@ void loop() {
  {
   case e::Inicio:
     setVelocidad(25);
-    if (medidaencoder > 1000){
+    if (medidaencoder > 1400){
       estado = e::Final;
     }
   break;
