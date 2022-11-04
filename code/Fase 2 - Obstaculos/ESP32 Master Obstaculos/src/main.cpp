@@ -219,21 +219,22 @@ void setup() {
 
   //Serial.begin(115200);
 
-
   pinMode(PIN_BOTON ,INPUT_PULLUP);
-
   pinMode(LED_BUILTIN,OUTPUT);
+
   Wire.begin();
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
+
   estado = e::Inicio;
+
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   //Calibrar();
 
   for(int i = 0; i<20 ; i++){
-    digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     delay(100);
   }
   MPU9250Setting setting;
@@ -259,14 +260,14 @@ void setup() {
   float tot =0;
   while (num < 1000){
     if (mpu.update()){
-      num = num +1;
+      num = num + 1;
       tot = tot + mpu.getGyroZ();
     }
     delay(5);
   }
   offset = tot/num;
 
-  for( int i = 0; i<4; i++){
+  for( int i = 0; i < 4; i++){
     pixy.changeProg("line");
   }
 
@@ -276,8 +277,7 @@ void setup() {
   setEnable(1);
   delay(1000);
 
-
-  setVelocidad(17);
+  setVelocidad(25);
   delay(500);
 }
 
@@ -362,17 +362,16 @@ void loop() {
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
-      setVelocidad(-15);
+      setVelocidad(-20);
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
-    if((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1200)){
+    if ((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1200)){
       estado = e::DecidiendoGiro;
-    }
-    else if(medidasUltrasonidos[ultraFrontal] <= 15){
+    } else if (medidasUltrasonidos[ultraFrontal] <= 15){
       setVelocidad(0);
       MarcaEncoder = medidaencoder;
-      setVelocidad(-15);
+      setVelocidad(-20);
       estado = e::Atras;
     }
   break;
@@ -397,7 +396,7 @@ void loop() {
         }
         LecturaGiro = false;
         MarcaEncoder = medidaencoder;
-        setVelocidad(-15);
+        setVelocidad(-20);
         pixy.changeProg("block");
         estado = e::Atras;
       }
@@ -410,10 +409,10 @@ void loop() {
   break;
 
   case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 190){
+    if ((MarcaEncoder - medidaencoder) >= 250){
       setVelocidad(0);
       delay(20);
-      setVelocidad(17);
+      setVelocidad(25);
       estado = e::Recto;
     }
   break;
@@ -435,7 +434,7 @@ void loop() {
       setGiro(ErrorDireccionActual);
       setVelocidad(0);
       delay(20);
-      setVelocidad(13);
+      setVelocidad(25);
       estado = e::Esquivar2;
     }
   break;
@@ -463,7 +462,7 @@ void loop() {
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
       delay(10);
-      setVelocidad(13);
+      setVelocidad(25);
       if ((medidaencoder - MarcaEncoderTramo) >= 1200){
         estado = e::Recto;
       } else {
@@ -477,7 +476,7 @@ void loop() {
       setVelocidad(0);
       delay(20);
       MarcaEncoder = medidaencoder;
-      setVelocidad(-13);
+      setVelocidad(-20);
       estado = e::Atras;
     }
   break;
