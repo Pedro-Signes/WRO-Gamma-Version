@@ -281,7 +281,6 @@ void loop() {
       setGiro(_setAngle);
       _setAngleAnterior = _setAngle;
     }
-    //EnviarServoTelemetria();
     ErrorDireccionAnterior = ErrorDireccionActual;
     prev_ms_direccion = millis() + 15;
   }

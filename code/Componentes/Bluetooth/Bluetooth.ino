@@ -10,7 +10,7 @@ void setup()
   pinMode(EN, OUTPUT);  // this pin will pull the HC-05 pin 34 (key pin) HIGH to switch module to AT mode
   digitalWrite(EN, HIGH); 
   Serial.begin(115200);
-  //Serial.println("Enter AT commands:");
+  Serial.println("Enter AT commands:");
   BTSerial.begin(115200);  // HC-05 default speed in AT command more
 }
 

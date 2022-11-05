@@ -6,7 +6,6 @@
 #include <WiFiUdp.h>
 #include <Pixy2.h>
 
-
 #define tamanoMinimodeEsquive 55
 #define GreenSignature 1
 #define RedSignature 2
@@ -48,12 +47,14 @@ byte ultraDerecho = 2;
 byte ultraTrasero = 3;
 
 long medidaencoder = 0;
+long prev_medidaencoder = 0;
 long MarcaEncoder = 0;
 long MarcaEncoderTramo = -2000;
 
 bool forward = true;
 
-bool PasadoDerecha = false;
+double posicionX = 0;
+double posicionY = 0;
 
 enum e{
   Inicio,
@@ -77,7 +78,7 @@ enum e{
   Final
 };
 
-int estado = e::Inicio;
+byte estado;
 
 
 /*void Calibrar(){ // función para calibrar ( revisar )
@@ -194,7 +195,6 @@ void EnviarTelemetria()
 }
 
 void medirUltrasonidos(){
-
   Wire.beginTransmission(4);
   Wire.write(2);
   Wire.endTransmission();
@@ -206,28 +206,12 @@ void medirUltrasonidos(){
   }
 }
 
-bool ComprobarPoscicion() {
-  if (sentidoGiro) {
-    if (medidasUltrasonidos[ultraIzquierdo] <= 30) {
-      PasadoDerecha = false;
-      return 1;
-    } else if (medidasUltrasonidos[ultraIzquierdo] >= 50) {
-      PasadoDerecha = true;
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-  else {
-    if (medidasUltrasonidos[ultraDerecho] <= 30){
-      PasadoDerecha = true;
-      return 1;
-    } else if (medidasUltrasonidos[ultraDerecho] >= 50){
-      PasadoDerecha = false;
-      return 1;
-    } else {
-      return 0;
-    }
+void posicionInicial() {
+  medirUltrasonidos();
+  if ((medidasUltrasonidos[ultraTrasero] > 90) && (medidasUltrasonidos[ultraTrasero] < 140)){
+    posicionY = medidasUltrasonidos[ultraTrasero] * 14;
+  } else if ((medidasUltrasonidos[ultraFrontal] > 90) && (medidasUltrasonidos[ultraFrontal] < 140)){
+    posicionY = (300 - medidasUltrasonidos[ultraFrontal]) * 14;
   }
 }
 
@@ -244,7 +228,7 @@ void setup() {
   Wire1.begin(15,4,freq);
   delay(100);
 
-  estado = e::Inicio;
+  estado = e::Final;
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -271,7 +255,7 @@ void setup() {
 
   //loadCalibration();
 
-  medirUltrasonidos();
+  posicionInicial();
    
   int num =0;
   float tot =0;
@@ -305,6 +289,15 @@ void loop() {
     Duracion_de_la_muestra = millis() - prev_ms_brujula;
     prev_ms_brujula = millis();
     valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
+  }
+
+  static uint32_t prev_ms_posicion = millis();
+  if (millis() > prev_ms_posicion) {
+    double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
+    double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
+    posicionX = posicionX + dx;
+    posicionY = posicionY + dy;
+    prev_ms_posicion = millis() + 10;
   }
 
   static uint32_t prev_ms_direccion = millis();
@@ -441,7 +434,7 @@ void loop() {
 
   case e::Esquivar1:
     if (abs(ErrorDireccionActual) <= 5){
-      estado = e::Final;
+      estado = e::Esquivar2;
     }
   break;
 

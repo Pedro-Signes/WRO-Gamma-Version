@@ -98,6 +98,7 @@ Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,9000UL);          //derechos
 Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,9000UL);          //Trasero
 
 void LecturaUltrasonidos();
+void allUltrasonic();
 
 void setup() {
   pixels.begin();
@@ -117,7 +118,10 @@ void setup() {
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent); // register event
 
-  LecturaUltrasonidos();
+  for (byte i = 0; i < 5; i++) {
+    allUltrasonic;
+    delay(300);
+  }
   
   byte mainpixel = 0;
   int sense = 1;
@@ -257,6 +261,30 @@ void LecturaUltrasonidos() {
     }
   } else {
     distanceTrasero = ultrasonicTrasero.read();
+  }
+}
+
+void allUltrasonic() {
+  byte d1f = ultrasonicFrontal.read();    // distancia de prueba 1 (frontal)
+  byte d1t = ultrasonicTrasero.read();    // distancia de prueba 1 (trasero)
+  byte d1d = ultrasonicDerecho.read();    // distancia de prueba 1 (derecho)
+  byte d1i = ultrasonicIzquierdo.read();  // distancia de prueba 1 (izquierdo)
+  delay(200);
+  byte d2f = ultrasonicFrontal.read();    // distancia de prueba 2 (frontal)
+  byte d2t = ultrasonicTrasero.read();    // distancia de prueba 2 (trasero)
+  byte d2d = ultrasonicDerecho.read();    // distancia de prueba 2 (derecho)
+  byte d2i = ultrasonicIzquierdo.read();  // distancia de prueba 2 (izquierdo)
+  if (abs(d1f - d2f) < 10){
+    distanceFrontal = d2f;
+  }
+  if (abs(d1t - d2t) < 10){
+    distanceFrontal = d2t;
+  }
+  if (abs(d1d - d2d) < 10){
+    distanceFrontal = d2d;
+  }
+  if (abs(d1i - d2i) < 10){
+    distanceFrontal = d2i;
   }
 }
 
