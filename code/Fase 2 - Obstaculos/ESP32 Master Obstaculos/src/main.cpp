@@ -228,7 +228,8 @@ void setup() {
   Wire1.begin(15,4,freq);
   delay(100);
 
-  estado = e::Final;
+  estado = e::Final;  // CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBIAR
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -341,7 +342,7 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (medidaencoder > 400){
+    if (posicionY > 1900){
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
@@ -365,10 +366,10 @@ void loop() {
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         esquivarDerecha = true;
-        direccionObjetivo = direccionObjetivo - 40;
+        direccionObjetivo = direccionObjetivo - 80;
       } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         esquivarDerecha = false;
-        direccionObjetivo = direccionObjetivo + 40;
+        direccionObjetivo = direccionObjetivo + 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
@@ -431,12 +432,18 @@ void loop() {
     setEnable(0);
   break;
 
-
   case e::Esquivar1:
-    if (abs(ErrorDireccionActual) <= 5){
-      estado = e::Esquivar2;
+    if (abs(posicionX) >= 200) {
+      estado = e::Final;
     }
   break;
+
+/*
+  case e::Esquivar1:
+    if (abs(ErrorDireccionActual) <= 5){
+      estado = e::Final;
+    }
+  break;*/
 
   case e::Esquivar2:
     if (abs(ErrorDireccionActual) <= 5) {

@@ -119,7 +119,7 @@ void setup() {
   Wire.onRequest(requestEvent); // register event
 
   for (byte i = 0; i < 5; i++) {
-    allUltrasonic;
+    allUltrasonic();
     delay(300);
   }
   
@@ -275,16 +275,16 @@ void allUltrasonic() {
   byte d2d = ultrasonicDerecho.read();    // distancia de prueba 2 (derecho)
   byte d2i = ultrasonicIzquierdo.read();  // distancia de prueba 2 (izquierdo)
   if (abs(d1f - d2f) < 10){
-    distanceFrontal = d2f;
+    distanceFrontal = (d2f + d1f) / 2;
   }
   if (abs(d1t - d2t) < 10){
-    distanceFrontal = d2t;
+    distanceFrontal = (d2t + d1t) / 2;
   }
   if (abs(d1d - d2d) < 10){
-    distanceFrontal = d2d;
+    distanceFrontal = (d2d + d1d) / 2;
   }
   if (abs(d1i - d2i) < 10){
-    distanceFrontal = d2i;
+    distanceFrontal = (d2i + d1i) / 2;
   }
 }
 
