@@ -17,6 +17,8 @@ int vuelta = 1;
 int giros = 0;
 int sentidoGiro = 0;
 
+int offsetEncoder = 400;
+
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0; 
@@ -314,7 +316,7 @@ void loop() {
    estado = e::Final;
   } else {
     setVelocidad(30);
-    if ((medidaencoder - MarcaEncoder) > 400) { //10cm con 120 pasos de encoder
+    if ((medidaencoder - MarcaEncoder) > offsetEncoder) { //10cm con 120 pasos de encoder
       estado = e::DecidiendoGiro;
   }
   }    
@@ -331,9 +333,19 @@ void loop() {
   setVelocidad(30);
   if (medidasUltrasonidos[ultraIzquierdo] > 110) {
     sentidoGiro = 1;
+    if (medidasUltrasonidos[ultraDerecho] <= 40){
+      offsetEncoder = 800;      // Default + OffSet
+    } else {
+      offsetEncoder = 400;      // Default
+    }
     estado = e::Girando;
   } else if (medidasUltrasonidos[ultraDerecho] > 110) {
     sentidoGiro = -1;
+    if (medidasUltrasonidos[ultraIzquierdo] <= 40){
+      offsetEncoder = 800;      // Default + OffSet
+    } else {
+      offsetEncoder = 400;      // Default
+    }
     estado = e::Girando;
   }
   if (medidasUltrasonidos[ultraFrontal] < 40) {
@@ -344,11 +356,21 @@ void loop() {
 
  case e::DecidiendoGiro:
   setVelocidad(30);
-  if ((medidasUltrasonidos[ultraIzquierdo] >= 145 ) && (sentidoGiro == 1)) {
+  if ((medidasUltrasonidos[ultraIzquierdo] >= 110 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
+    if (medidasUltrasonidos[ultraDerecho] <= 40){
+      offsetEncoder = 800;      // Default + OffSet
+    } else {
+      offsetEncoder = 400;      // Default
+    }
     estado = e::Girando;
-  } else if ((medidasUltrasonidos[ultraDerecho] >= 145) && (sentidoGiro == -1)) {
+  } else if ((medidasUltrasonidos[ultraDerecho] >= 110) && (sentidoGiro == -1)) {
     MarcaEncoder = medidaencoder;
+    if (medidasUltrasonidos[ultraIzquierdo] <= 40){
+      offsetEncoder = 800;      // Default + OffSet
+    } else {
+      offsetEncoder = 400;      // Default
+    }
     estado = e::Girando;
   } else if (medidasUltrasonidos[ultraFrontal] <= 40) {
   }
