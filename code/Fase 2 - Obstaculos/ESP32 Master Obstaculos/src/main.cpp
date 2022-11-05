@@ -159,20 +159,37 @@ void enviarMensaje(String texto){
 
 void EnviarTelemetria()
 {
+  Serial.print("\t");
   Serial.print(estado);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraFrontal]);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraTrasero]);
   Serial.print(",");
+  Serial.print("\t");
+  Serial.print(medidasUltrasonidos[ultraDerecho]);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(medidasUltrasonidos[ultraIzquierdo]);
+  Serial.print(",");
+  Serial.print("\t");
   Serial.print(MarcaEncoder);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidaencoder);
   Serial.print(",");
+  Serial.print("\t");
   Serial.print(medidaencoder - MarcaEncoder);
   Serial.print(",");
-  Serial.print(MarcaEncoderTramo);
+  Serial.print("\t");
+  Serial.print(direccionObjetivo);
   Serial.print(",");
+  Serial.print("\t");
+  Serial.print(_setAngleAnterior);
+  Serial.print(",");
+  Serial.print("\t");
   Serial.println(valorBrujula);
 }
 
@@ -217,7 +234,7 @@ bool ComprobarPoscicion() {
 void setup() {
   pixy.init();
 
-  //Serial.begin(115200);
+  Serial.begin(115200);
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
@@ -303,9 +320,9 @@ void loop() {
         }
         _setAngleAnterior = _setAngle;
       }
-      ErrorDireccionAnterior = ErrorDireccionActual;
-      prev_ms_direccion = millis() + 10;
-    }    
+    }
+    ErrorDireccionAnterior = ErrorDireccionActual;
+    prev_ms_direccion = millis() + 10;    
   }
   
     
@@ -335,7 +352,7 @@ void loop() {
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
-  break;
+    break;
 
   case e::Recto:
     AutoGiro = true;
@@ -362,8 +379,7 @@ void loop() {
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
-      setVelocidad(-20);
-      MarcaEncoder = medidaencoder;
+      setVelocidad(20);
       estado = e::Esquivar1;
     }
     if ((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1200)){
@@ -424,23 +440,13 @@ void loop() {
 
 
   case e::Esquivar1:
-    if ((MarcaEncoder - medidaencoder) >= 50 ){
-      if (esquivarDerecha) {
-        direccionObjetivo = direccionObjetivo - 0;
-      } else {
-        direccionObjetivo = direccionObjetivo + 0;
-      }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(25);
-      estado = e::Esquivar2;
+    if (abs(ErrorDireccionActual) <= 5){
+      estado = e::Final;
     }
   break;
 
   case e::Esquivar2:
-    if(abs(ErrorDireccionActual) <= 5){
+    if (abs(ErrorDireccionActual) <= 5) {
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 80;
       } else {

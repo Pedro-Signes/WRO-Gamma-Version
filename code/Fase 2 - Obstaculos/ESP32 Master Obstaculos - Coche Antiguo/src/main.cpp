@@ -138,13 +138,13 @@ void setGiro(int posicionServo){
 void setVelocidad(int velocidad){
   Wire.beginTransmission(4);
   Wire.write(3);
-  if(velocidad<0){
+  if (velocidad<0) {
     Wire.write(-velocidad);
     Wire.write(0);
     forward = false;
-  }else{
+  } else {
     Wire.write(velocidad);
-    Wire.write(2);
+    Wire.write(1);
     forward = true;
   }
   Wire.endTransmission();
@@ -217,7 +217,7 @@ bool ComprobarPoscicion() {
 void setup() {
   pixy.init();
 
-  //Serial.begin(115200);
+  Serial.begin(115200);
 
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
@@ -277,7 +277,7 @@ void setup() {
   delay(1000);
 
 
-  setVelocidad(17);
+  setVelocidad(20);
   delay(500);
 }
 
@@ -362,7 +362,7 @@ void loop() {
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
-      setVelocidad(-15);
+      setVelocidad(-17);
       MarcaEncoder = medidaencoder;
       estado = e::Esquivar1;
     }
@@ -372,7 +372,7 @@ void loop() {
     else if(medidasUltrasonidos[ultraFrontal] <= 15){
       setVelocidad(0);
       MarcaEncoder = medidaencoder;
-      setVelocidad(-15);
+      setVelocidad(-17);
       estado = e::Atras;
     }
   break;
@@ -397,7 +397,7 @@ void loop() {
         }
         LecturaGiro = false;
         MarcaEncoder = medidaencoder;
-        setVelocidad(-15);
+        setVelocidad(-17);
         pixy.changeProg("block");
         estado = e::Atras;
       }
@@ -413,7 +413,7 @@ void loop() {
     if ((MarcaEncoder - medidaencoder) >= 190){
       setVelocidad(0);
       delay(20);
-      setVelocidad(17);
+      setVelocidad(20);
       estado = e::Recto;
     }
   break;
@@ -425,7 +425,7 @@ void loop() {
 
 
   case e::Esquivar1:
-    if ((MarcaEncoder - medidaencoder) >= 50 ){
+    if ((MarcaEncoder - medidaencoder) >= 50){
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo - 0;
       } else {
@@ -435,7 +435,7 @@ void loop() {
       setGiro(ErrorDireccionActual);
       setVelocidad(0);
       delay(20);
-      setVelocidad(13);
+      setVelocidad(20);
       estado = e::Esquivar2;
     }
   break;
@@ -463,7 +463,7 @@ void loop() {
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
       setGiro(ErrorDireccionActual);
       delay(10);
-      setVelocidad(13);
+      setVelocidad(20);
       if ((medidaencoder - MarcaEncoderTramo) >= 1200){
         estado = e::Recto;
       } else {
@@ -477,7 +477,7 @@ void loop() {
       setVelocidad(0);
       delay(20);
       MarcaEncoder = medidaencoder;
-      setVelocidad(-13);
+      setVelocidad(-17);
       estado = e::Atras;
     }
   break;
@@ -494,7 +494,7 @@ void loop() {
       setGiro(-50);
     }
     MarcaEncoder = medidaencoder;
-    setVelocidad(-20);
+    setVelocidad(-17);
     estado = e::Maniobra2;
   break;
 
@@ -530,7 +530,7 @@ void loop() {
     }
     MarcaEncoder = medidaencoder;
     delay(20);
-    setVelocidad(-20);
+    setVelocidad(-17);
     estado = Posicionamiento3;
     }
   break;
@@ -543,7 +543,7 @@ void loop() {
         AutoGiro = true;
         giros++;
         delay(20);
-        setVelocidad(-15);
+        setVelocidad(-17);
         estado = e::Posicionamiento4;
       }else {
         estado = e::Posicionamiento1;
@@ -556,7 +556,7 @@ void loop() {
       setVelocidad(0);
       delay(50);
       MarcaEncoderTramo = medidaencoder;
-      setVelocidad(17);
+      setVelocidad(20);
       estado = e::ComprobacionPosicion;
     }
   break;
@@ -567,16 +567,16 @@ void loop() {
     if (ComprobarPoscicion()){
       if(PasadoDerecha){
         direccionObjetivo = direccionObjetivo + 23;
-        setVelocidad(10);
+        setVelocidad(20);
         estado = e::Centrar1;
       }else {
         direccionObjetivo = direccionObjetivo - 23;
-        setVelocidad(10);
+        setVelocidad(20);
         estado = e::Centrar1;
       }
     }
     else{
-      setVelocidad(17);
+      setVelocidad(20);
       estado = e::Recto;
     }
   break;
@@ -585,11 +585,11 @@ void loop() {
   if(abs(ErrorDireccionActual) <= 10){
     if(PasadoDerecha){
       direccionObjetivo = direccionObjetivo - 23;
-      setVelocidad(10);
+      setVelocidad(20);
       estado = e::Centrar2;
     } else {
       direccionObjetivo = direccionObjetivo + 23;
-      setVelocidad(10);
+      setVelocidad(20);
       estado = e::Centrar2;
     }
   }
@@ -599,7 +599,7 @@ void loop() {
   if(abs(ErrorDireccionActual) <= 10){
     setVelocidad(0);
     delay(20);
-    setVelocidad(-13);
+    setVelocidad(-17);
     estado = e::Centrar3;
   }
   break;
