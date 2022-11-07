@@ -278,13 +278,13 @@ void allUltrasonic() {
     distanceFrontal = (d2f + d1f) / 2;
   }
   if (abs(d1t - d2t) < 10){
-    distanceFrontal = (d2t + d1t) / 2;
+    distanceTrasero = (d2t + d1t) / 2;
   }
   if (abs(d1d - d2d) < 10){
-    distanceFrontal = (d2d + d1d) / 2;
+    distanceDerecho = (d2d + d1d) / 2;
   }
   if (abs(d1i - d2i) < 10){
-    distanceFrontal = (d2i + d1i) / 2;
+    distanceIzquierdo = (d2i + d1i) / 2;
   }
 }
 
