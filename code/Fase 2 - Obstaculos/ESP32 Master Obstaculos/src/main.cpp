@@ -12,6 +12,14 @@
 
 #define PIN_BOTON 13
 
+#define PIN_ROJO1 18
+#define PIN_VERDE1 17
+#define PIN_AZUL1 16
+#define PIN_ROJO2 15
+#define PIN_VERDE2 14
+#define PIN_AZUL2 13
+#define PIN_BOCINA 19
+
 #define servoKP 4
 #define servoKD 20
 int _setAngleAnterior;    // Valor del _setAngle anterior
@@ -191,7 +199,13 @@ void EnviarTelemetria()
   Serial.print(_setAngleAnterior);
   Serial.print(",");
   Serial.print("\t");
-  Serial.println(valorBrujula);
+  Serial.print(valorBrujula);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(posicionX);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.println(posicionY);
 }
 
 void medirUltrasonidos(){
@@ -213,6 +227,7 @@ void posicionInicial() {
   } else if ((medidasUltrasonidos[ultraFrontal] > 90) && (medidasUltrasonidos[ultraFrontal] < 140)){
     posicionY = (300 - medidasUltrasonidos[ultraFrontal]) * 14;
   }
+  EnviarTelemetria();
 }
 
 void setup() {
@@ -222,14 +237,20 @@ void setup() {
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
+  pinMode(LED_BUILTIN,OUTPUT);
+  pinMode(PIN_VERDE1,OUTPUT);
+  pinMode(PIN_VERDE2,OUTPUT);
+  pinMode(PIN_ROJO1,OUTPUT);
+  pinMode(PIN_ROJO2,OUTPUT);
+  pinMode(PIN_AZUL1,OUTPUT);
+  pinMode(PIN_BOCINA,OUTPUT);
 
   Wire.begin();
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
 
-  estado = e::Final;  // CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMBIAR
-//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  estado = e::Inicio;
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -255,8 +276,6 @@ void setup() {
   }
 
   //loadCalibration();
-
-  posicionInicial();
    
   int num =0;
   float tot =0;
@@ -269,13 +288,19 @@ void setup() {
   }
   offset = tot/num;
 
+  posicionInicial();
+
   for( int i = 0; i < 4; i++){
     pixy.changeProg("line");
   }
 
   digitalWrite(LED_BUILTIN,HIGH);
 
-  while (digitalRead(PIN_BOTON));
+  while (digitalRead(PIN_BOTON)){
+    medirUltrasonidos();
+    EnviarTelemetria();
+    delay(100);
+  }
   setEnable(1);
   delay(1000);
 
@@ -332,6 +357,7 @@ void loop() {
   static uint32_t prev_ms_encoder = millis();
   if (millis()> prev_ms_encoder) {
     prev_ms_encoder = millis() + 30;
+    prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
     EnviarTelemetria();
   }
@@ -342,13 +368,15 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 1900){
+    if (posicionY > 2500) {
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
     break;
 
   case e::Recto:
+  digitalWrite(PIN_ROJO1, LOW);
+  digitalWrite(PIN_VERDE1, LOW);
     AutoGiro = true;
     if ((giros == 12) && ((medidaencoder - MarcaEncoderTramo) >= 800)) {
       estado = e::Final;
@@ -366,9 +394,11 @@ void loop() {
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         esquivarDerecha = true;
+        digitalWrite(PIN_ROJO1, HIGH);
         direccionObjetivo = direccionObjetivo - 80;
       } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         esquivarDerecha = false;
+        digitalWrite(PIN_VERDE1, HIGH);
         direccionObjetivo = direccionObjetivo + 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -433,7 +463,7 @@ void loop() {
   break;
 
   case e::Esquivar1:
-    if (abs(posicionX) >= 200) {
+    if (abs(posicionX) >= 280) {
       estado = e::Final;
     }
   break;
