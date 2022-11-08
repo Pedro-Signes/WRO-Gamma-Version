@@ -18,8 +18,10 @@ public:
   CServo(byte PinServo);
   void MoverServo(int _angulo);
   void Setup();
+  int getAngle();
 private:
   byte _pinServo;
+  int _ang = 0;
   Servo Miservo;
 };
 
@@ -32,9 +34,13 @@ void CServo::Setup(){
 }
 
 void CServo::MoverServo(int _angulo){  //lo que mueve el servo 
-  int _ang = map(_angulo, -100, 100, servoMIN, servoMAX);
+  _ang = map(_angulo, -100, 100, servoMIN, servoMAX);
   _ang = constrain(_ang, servoMIN, servoMAX);
   Miservo.write(_ang);
+}
+
+int CServo::getAngle() {
+  return _ang;
 }
 
 class Motor{  

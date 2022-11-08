@@ -68,13 +68,7 @@ void enviar();
 
 void telemetria() {
   Serial.print("\t");
-  Serial.print(velocidad);
-  Serial.print(",");
-  Serial.print("\t");
-  Serial.print(velocidadObjetivo);
-  Serial.print(",");
-  Serial.print("\t");
-  Serial.println(MiMotor.GetPotencia());
+  Serial.println(MiCServo.getAngle());
 }
 
 void colors(byte mainPixel, byte currentPixel, int sense) {
