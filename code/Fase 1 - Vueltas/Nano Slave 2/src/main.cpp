@@ -20,6 +20,8 @@ volatile uint32_t prev_mcs_laserF;
 volatile uint32_t prev_mcs_laserD;
 volatile uint32_t prev_mcs_laserI;
 
+uint8_t requestedData = 0;
+
 void receiveEvent(int howMany);
 void requestEvent();
 
@@ -77,4 +79,16 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+}
+
+void receiveEvent(int howMany) {
+  requestedData = Wire.read();
+}
+
+void requestEvent() {
+  if (requestedData == 1) {
+    Wire.write(outputLaserF);
+    Wire.write(outputLaserD);
+    Wire.write(outputLaserI);
+  }
 }

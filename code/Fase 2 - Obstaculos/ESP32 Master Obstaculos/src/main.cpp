@@ -5,10 +5,13 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <Pixy2.h>
+#include <ESP32Servo.h>
 
 #define tamanoMinimodeEsquive 55
 #define GreenSignature 1
 #define RedSignature 2
+
+#define EncodersPorCM 14
 
 #define PIN_BOTON 13
 
@@ -19,6 +22,8 @@
 #define PIN_VERDE2 12
 #define PIN_BOCINA 33
 
+#define PIN_SERVO_CAM 32      // Servo de la camara
+
 #define servoKP 10
 #define servoKD 15
 int _setAngleAnterior;    // Valor del _setAngle anterior
@@ -27,7 +32,7 @@ float valorBrujula = 0;
 float offset;
 int vuelta = 1;
 int giros = 0;
-bool sentidoGiro = true;
+bool sentidoGiro = true;      // True -> Izquierda      False -> Derecha
 bool LecturaGiro = true;
 
 int ErrorDireccionAnterior = 0;
@@ -43,15 +48,18 @@ uint32_t Duracion_de_la_muestra = 0;
 
 MPU9250 mpu;
 Pixy2 pixy;
+Servo servo;
 
 bool esquivarDerecha = false;
 
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
-byte ultraIzquierdo = 1;
-byte ultraDerecho = 2;
+byte ultraDerecho = 1;
+byte ultraIzquierdo = 2;
 byte ultraTrasero = 3;
+
+byte medidasLaseres[3];
 
 long medidaencoder = 0;
 long prev_medidaencoder = 0;
@@ -73,10 +81,7 @@ enum e{
   DecidiendoGiro,
   Maniobra1, // Girar
   Maniobra2,
-  Posicionamiento1,
-  Posicionamiento2,
-  Posicionamiento3,
-  Posicionamiento4,
+  Posicionamiento,
   ComprobacionPosicion,
   Centrar1,
   Centrar2,
@@ -97,6 +102,13 @@ byte estado;
   saveCalibration();
 }*/
 
+// Devuelve la posición donde hay que poner el servo
+int ErrorDireccion(int bearing, int target){
+  int error = target - bearing;
+  return error;
+}
+
+// I2C Arduino Nano Slave 1
 
 long medirEncoder() {
   Wire.beginTransmission(4);
@@ -111,13 +123,6 @@ long medirEncoder() {
   }
   return _medidaEncoder;
 }
-
-// Devuelve la posición donde hay que poner el servo
-int ErrorDireccion(int bearing, int target){
-  int error = target - bearing;
-  return error;
-}
-
 
 void setEnable (int motrorEnable){
   Wire.beginTransmission(4);
@@ -154,6 +159,34 @@ void setVelocidad(int velocidad){
   }
   Wire.endTransmission();
 }
+
+void medirUltrasonidos() {
+  Wire.beginTransmission(4);
+  Wire.write(2);
+  Wire.endTransmission();
+  Wire.requestFrom(4,4);
+  byte iteracion = 0;
+  while (Wire.available()) {
+    medidasUltrasonidos[iteracion] = Wire.read();
+    iteracion ++;
+  }
+}
+
+// I2C Arduino Nano Every Slave 2
+
+void medirLaseres() {
+  Wire.beginTransmission(5);
+  Wire.write(1);
+  Wire.endTransmission();
+  Wire.requestFrom(5,3);
+  byte iteracion = 0;
+  while (Wire.available()) {
+    medidasLaseres[iteracion] = Wire.read();
+    iteracion ++;
+  }
+}
+
+// Telemetria
 
 void enviarMensaje(int numero){
  Serial.println(numero);
@@ -209,30 +242,36 @@ void EnviarTelemetria()
   Serial.println(ErrorDireccionActual);
 }
 
-void medirUltrasonidos(){
-  Wire.beginTransmission(4);
-  Wire.write(2);
-  Wire.endTransmission();
-  Wire.requestFrom(4,4);
-  byte iteracion = 0;
-  while (Wire.available()){
-    medidasUltrasonidos[iteracion] = Wire.read();
-    iteracion++;
-  }
-}
+// Obtencion de la posicion
 
 void posicionInicial() {
   medirUltrasonidos();
   if ((medidasUltrasonidos[ultraTrasero] > 90) && (medidasUltrasonidos[ultraTrasero] < 140)){
-    posicionY = medidasUltrasonidos[ultraTrasero] * 14;
+    posicionY = medidasUltrasonidos[ultraTrasero] * EncodersPorCM;
   } else if ((medidasUltrasonidos[ultraFrontal] > 90) && (medidasUltrasonidos[ultraFrontal] < 140)){
-    posicionY = (300 - medidasUltrasonidos[ultraFrontal]) * 14;
+    posicionY = (300 - medidasUltrasonidos[ultraFrontal]) * EncodersPorCM;
   }
   EnviarTelemetria();
 }
 
+void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con resta
+  if (corregir) {
+    if (sentidoGiro) {
+      posicionX = (50 - medidasUltrasonidos[ultraDerecho]) * EncodersPorCM;
+    } else {
+      posicionX = (50 - medidasUltrasonidos[ultraIzquierdo]) * EncodersPorCM;
+    }
+    posicionY = medidasUltrasonidos[ultraTrasero] * EncodersPorCM;
+  } else {
+    posicionX = posicionY - 250 * EncodersPorCM;
+    posicionY = posicionX + 50 * EncodersPorCM;
+  }
+}
+
 void setup() {
   pixy.init();
+
+  servo.attach(PIN_SERVO_CAM);
 
   Serial.begin(115200);
 
@@ -437,7 +476,7 @@ void loop() {
         float m = (y1 - y0)*(x1 - x0);
         if (m < 0){
           sentidoGiro = false;
-        }else if(m > 0){
+        } else if(m > 0){
           sentidoGiro = true;
         }
         LecturaGiro = false;

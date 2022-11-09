@@ -26,18 +26,17 @@ volatile float velocidad;
 byte datoEncoder[4];
 
 int distanceFrontal;
-int distanceIzquierdo;
 int distanceDerecho;
+int distanceIzquierdo;
 int distanceTrasero;
 int prevdistanceFrontal;
-int prevdistanceIzquierdo;
 int prevdistanceDerecho;
+int prevdistanceIzquierdo;
 int prevdistanceTrasero;
 bool discard[4] = {true, true, true, true};
+byte UltraMedir = 0;
 
 int velocidadObjetivo = 0;
-
-byte UltraMedir = 0;
 
 bool ESP_prepared = false;
 
@@ -227,8 +226,8 @@ void requestEvent() {
   }
   else if (requestedData == 2){
     Wire.write(distanceFrontal);
-    Wire.write(distanceIzquierdo);
     Wire.write(distanceDerecho);
+    Wire.write(distanceIzquierdo);
     Wire.write(distanceTrasero);
   }
 

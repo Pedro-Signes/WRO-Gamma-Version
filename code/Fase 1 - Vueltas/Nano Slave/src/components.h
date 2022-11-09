@@ -75,24 +75,24 @@ Motor::Motor(byte PinEn,byte PinDir1,byte PinDir2){ // setup del motor
 }
 
 void Motor::potencia(int pot){
-  // (PinDir1Motor,LOW) ; (PinDir2Motor,HIGH) -> Hacia atrás
+  // (_pinDir1, LOW) ; (_pinDir2, HIGH) -> Hacia atrás
   // Inversamente propocional en el tema del sentido
   // Arranrque = 140
   if(pot>0){
-    forward=true;
-    digitalWrite(PinDir1Motor,HIGH);
-    digitalWrite(PinDir2Motor,LOW);
-    analogWrite(PinEnMotor, pot);
+    forward = true;
+    digitalWrite(_pinDir1,HIGH);
+    digitalWrite(_pinDir2,LOW);
+    analogWrite(_pinEn, pot);
   }
   else if(pot < 0){
-    forward=false;
-    digitalWrite(PinDir1Motor,LOW);
-    digitalWrite(PinDir2Motor,HIGH);
-    analogWrite(PinEnMotor, -pot);
+    forward = false;
+    digitalWrite(_pinDir1,LOW);
+    digitalWrite(_pinDir2,HIGH);
+    analogWrite(_pinEn, -pot);
   }else{
-    analogWrite(PinEnMotor,200);
-    digitalWrite(PinDir1Motor,LOW);
-    digitalWrite(PinDir2Motor,LOW);
+    digitalWrite(_pinDir1,LOW);
+    digitalWrite(_pinDir2,LOW);
+    analogWrite(_pinEn,200);
   }
  
 }
