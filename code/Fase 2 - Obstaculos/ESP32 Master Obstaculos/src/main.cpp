@@ -195,6 +195,23 @@ void enviarMensaje(String texto){
  Serial.println(texto);
 }
 
+void distanceTelemetria() {
+Serial.print("\t");
+Serial.print(medidasUltrasonidos[ultraFrontal]);
+Serial.print("\t");
+Serial.print(medidasUltrasonidos[ultraDerecho]);
+Serial.print("\t");
+Serial.print(medidasUltrasonidos[ultraIzquierdo]);
+Serial.print("\t");
+Serial.print(medidasUltrasonidos[ultraTrasero]);
+Serial.print("\t");
+Serial.print(medidasLaseres[ultraFrontal]);
+Serial.print("\t");
+Serial.print(medidasLaseres[ultraDerecho]);
+Serial.print("\t");
+Serial.println(medidasLaseres[ultraIzquierdo]);
+}
+
 void EnviarTelemetria()
 {
   Serial.print("\t");
@@ -268,9 +285,16 @@ void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      
   }
 }
 
+ESP32PWM pwm;
+
 void setup() {
   pixy.init();
-
+  
+  ESP32PWM::allocateTimer(0);
+	ESP32PWM::allocateTimer(1);
+	ESP32PWM::allocateTimer(2);
+	ESP32PWM::allocateTimer(3);
+	servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO_CAM);
 
   Serial.begin(115200);
@@ -291,7 +315,7 @@ void setup() {
   Wire1.begin(15,4,freq);
   delay(100);
 
-  estado = e::Inicio;
+  estado = e::Final;
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -342,14 +366,29 @@ void setup() {
   delay(2000);
   while (digitalRead(PIN_BOTON)){
     medirUltrasonidos();
-    EnviarTelemetria();
+    medirLaseres();
+    distanceTelemetria();
+    //EnviarTelemetria();
     delay(100);
   }
   digitalWrite(PIN_AZUL1, LOW);
   setEnable(1);
   delay(1000);
 
-  setVelocidad(20);
+  servo.write(30);
+  delay(300);
+  servo.write(120);
+  delay(300);
+  servo.write(30);
+  delay(300);
+  servo.write(120);
+  delay(300);
+  servo.write(30);
+  delay(300);
+  servo.write(120);
+  delay(300);
+
+  //setVelocidad(20);
   delay(500);
 }
 
@@ -404,7 +443,8 @@ void loop() {
     prev_ms_encoder = millis() + 30;
     prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
-    EnviarTelemetria();
+    //EnviarTelemetria();
+    distanceTelemetria();
   }
 
   int mayor = -1;
