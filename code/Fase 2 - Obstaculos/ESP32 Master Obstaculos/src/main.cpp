@@ -20,9 +20,9 @@
 #define PIN_AZUL1 27
 #define PIN_ROJO2 14
 #define PIN_VERDE2 12
-#define PIN_BOCINA 33
+//#define PIN_BOCINA 33
 
-#define PIN_SERVO_CAM 32      // Servo de la camara
+#define PIN_SERVO_CAM 33      // Servo de la camara
 
 #define servoKP 10
 #define servoKD 15
@@ -285,8 +285,6 @@ void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      
   }
 }
 
-ESP32PWM pwm;
-
 void setup() {
   pixy.init();
   
@@ -308,7 +306,7 @@ void setup() {
   pinMode(PIN_ROJO1,OUTPUT);
   pinMode(PIN_ROJO2,OUTPUT);
   pinMode(PIN_AZUL1,OUTPUT);
-  pinMode(PIN_BOCINA,OUTPUT);
+  //pinMode(PIN_BOCINA,OUTPUT);
 
   Wire.begin();
   uint32_t freq = 400000;
@@ -375,6 +373,8 @@ void setup() {
   setEnable(1);
   delay(1000);
 
+  Serial.println("Servo va a moverse");
+
   servo.write(30);
   delay(300);
   servo.write(120);
@@ -387,6 +387,8 @@ void setup() {
   delay(300);
   servo.write(120);
   delay(300);
+
+  Serial.println("ya ta");
 
   //setVelocidad(20);
   delay(500);
