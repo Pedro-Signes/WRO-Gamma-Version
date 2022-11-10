@@ -13,12 +13,15 @@
 bool ReadingLaserF = false;   // Indica si se esta leyendo el Laser Frontal
 bool ReadingLaserD = false;   // Indica si se esta leyendo el laser Derecho
 bool ReadingLaserI = false;   // Indica si se esta leyendo el laser Izquierdo
-int outputLaserF; // micros
-int outputLaserD; // micros
-int outputLaserI; // micros
-volatile uint32_t prev_mcs_laserF;
-volatile uint32_t prev_mcs_laserD;
-volatile uint32_t prev_mcs_laserI;
+volatile uint32_t timeLaserF; // micros
+volatile uint32_t timeLaserD; // micros
+volatile uint32_t timeLaserI; // micros
+uint32_t prev_mcs_laserF;
+uint32_t prev_mcs_laserD;
+uint32_t prev_mcs_laserI;
+int16_t distanceF;
+int16_t distanceD;
+int16_t distanceI;
 
 uint8_t requestedData = 0;
 
@@ -31,7 +34,7 @@ void medirLaserF() {
     prev_mcs_laserF = mcs;
     ReadingLaserF = true;
   } else if (ReadingLaserF) {
-    outputLaserF = mcs - prev_mcs_laserF;
+    timeLaserF = mcs - prev_mcs_laserF;
     ReadingLaserF = false;
   }
 }
@@ -41,7 +44,7 @@ void medirLaserD() {
     prev_mcs_laserD = mcs;
     ReadingLaserD = true;
   } else if (ReadingLaserD) {
-    outputLaserD = mcs - prev_mcs_laserD;
+    timeLaserD = mcs - prev_mcs_laserD;
     ReadingLaserD = false;
   }
 }
@@ -51,7 +54,7 @@ void medirLaserI() {
     prev_mcs_laserI = mcs;
     ReadingLaserI = true;
   } else if (ReadingLaserI) {
-    outputLaserI = mcs - prev_mcs_laserI;
+    timeLaserI = mcs - prev_mcs_laserI;
     ReadingLaserI = false;
   }
 }
@@ -67,17 +70,33 @@ void setup() {
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent); // register event
 
-  pinMode(PinLaserF, OUTPUT);
-  pinMode(PinLaserD, OUTPUT);
-  pinMode(PinLaserI, OUTPUT);
+  pinMode(PinLaserF, INPUT);
+  pinMode(PinLaserD, INPUT);
+  pinMode(PinLaserI, INPUT);
   attachInterrupt(digitalPinToInterrupt(PinLaserF), medirLaserF, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PinLaserD), medirLaserD, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PinLaserI), medirLaserI, CHANGE);
+  Serial.println("Interrupciones activadas");
 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  distanceF = (timeLaserF - 1000) * 2;
+    if (distanceF < 0) distanceF = 0;
+
+  distanceD = (timeLaserD - 1000) * 2;
+    if (distanceD < 0) distanceD = 0;
+  
+  distanceI = (timeLaserI - 1000) * 2;
+    if (distanceI < 0) distanceI = 0;
+
+  Serial.print("F: ");
+  Serial.print(distanceF);
+  Serial.print("\tD: ");
+  Serial.print(distanceD);
+  Serial.print("\tI: ");
+  Serial.println(distanceI);
 
 }
 
@@ -87,8 +106,8 @@ void receiveEvent(int howMany) {
 
 void requestEvent() {
   if (requestedData == 1) {
-    Wire.write(outputLaserF);
-    Wire.write(outputLaserD);
-    Wire.write(outputLaserI);
+    Wire.write(distanceF);
+    Wire.write(distanceD);
+    Wire.write(distanceI);
   }
 }

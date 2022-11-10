@@ -285,6 +285,24 @@ void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      
   }
 }
 
+// Mover el servo de la camara
+void moverCamara() {
+  if (posicionY >= 180 * EncodersPorCM) {
+    if (posicionX > 20 * EncodersPorCM) {   // Revisar distancia
+      servo.write(20*sentidoGiro);          // Reviasr angulo
+    }
+    if (posicionX < -20 * EncodersPorCM) {  // Revisar distancia
+      servo.write(10*sentidoGiro);          // Revisar angulo
+    }
+    if (abs(posicionX) > 20) {              // Revisar distancia
+      servo.write(15*sentidoGiro);          // Revisar angulo
+    }
+  } else {
+    byte _ang = 90*giros - valorBrujula;
+    servo.write(_ang);
+  }
+}
+
 void setup() {
   pixy.init();
   
@@ -375,25 +393,21 @@ void setup() {
 
   Serial.println("Servo va a moverse");
 
-  servo.write(30);
+  servo.write(0);
   delay(300);
-  servo.write(120);
+  servo.write(180);
   delay(300);
-  servo.write(30);
+  servo.write(0);
   delay(300);
-  servo.write(120);
+  servo.write(180);
   delay(300);
-  servo.write(30);
-  delay(300);
-  servo.write(120);
-  delay(300);
+  servo.write(90);
 
   Serial.println("ya ta");
 
   //setVelocidad(20);
   delay(500);
 }
-
 
 void loop() {
   static uint32_t prev_ms_brujula = millis();
@@ -405,10 +419,11 @@ void loop() {
 
   static uint32_t prev_ms_posicion = millis();
   if (millis() > prev_ms_posicion) {
-    double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
     double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
-    posicionX = posicionX + dx;
+    double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
+    if (!sentidoGiro) dx = -dx;
     posicionY = posicionY + dy;
+    posicionX = posicionX + dx;
     prev_ms_posicion = millis() + 10;
   }
 
@@ -416,7 +431,7 @@ void loop() {
   if (millis() > prev_ms_direccion) {
     ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula, direccionObjetivo),-127,127);
     int _setAngle = constrain(servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior), -255, 255);
-    if(_setAngle != _setAngleAnterior) {
+    if (_setAngle != _setAngleAnterior) {
       if (AutoGiro) {
         if (forward) {
           setGiro(_setAngle);
@@ -432,7 +447,7 @@ void loop() {
   
     
   static uint32_t prev_ms_ultrasonidos = millis();
-  if (millis()> prev_ms_ultrasonidos) {
+  if (millis() > prev_ms_ultrasonidos) {
     prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
     if (!LecturaGiro) {
@@ -441,12 +456,18 @@ void loop() {
   }
 
   static uint32_t prev_ms_encoder = millis();
-  if (millis()> prev_ms_encoder) {
+  if (millis() > prev_ms_encoder) {
     prev_ms_encoder = millis() + 30;
     prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
     //EnviarTelemetria();
     distanceTelemetria();
+  }
+
+  static uint32_t prev_ms_camara = millis();
+  if (millis() > prev_ms_camara) {
+    prev_ms_camara = millis() + 50;
+    moverCamara();
   }
 
   int mayor = -1;
@@ -518,6 +539,7 @@ void loop() {
         float m = (y1 - y0)*(x1 - x0);
         if (m < 0){
           sentidoGiro = false;
+          posicionX = -posicionX;
         } else if(m > 0){
           sentidoGiro = true;
         }
@@ -552,26 +574,23 @@ void loop() {
   case e::Esquivar1:
     if (abs(posicionX) >= 280) {
       digitalWrite(PIN_AZUL1, HIGH);
-      estado = e::Final;
-    }
-  break;
-
-/*
-  case e::Esquivar1:
-    if (abs(ErrorDireccionActual) <= 5){
-      estado = e::Final;
-    }
-  break;*/
-
-  case e::Esquivar2:
-    if (abs(ErrorDireccionActual) <= 5) {
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 80;
       } else {
         direccionObjetivo = direccionObjetivo - 80;
       }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
+      MarcaEncoder = medidaencoder;
+      estado = e::Final;
+    }
+  break;
+
+  case e::Esquivar2:
+    if ((medidaencoder - MarcaEncoder) > 10 * EncodersPorCM) {
+      if (esquivarDerecha) {
+        direccionObjetivo = direccionObjetivo + 40;
+      } else {
+        direccionObjetivo = direccionObjetivo - 40;
+      }
       estado = e::Esquivar3;
     }
   break;
