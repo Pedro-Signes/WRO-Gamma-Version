@@ -19,7 +19,7 @@ volatile uint32_t timeLaserI; // micros
 uint32_t prev_mcs_laserF;
 uint32_t prev_mcs_laserD;
 uint32_t prev_mcs_laserI;
-int16_t distanceF;
+int16_t distanceF;    // d = (time - 1000) * 2    time in micros, distance in mm       d = (time - 1000) / 5 for distance in cm 
 int16_t distanceD;
 int16_t distanceI;
 
@@ -82,14 +82,9 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  distanceF = (timeLaserF - 1000) * 2;
-    if (distanceF < 0) distanceF = 0;
-
-  distanceD = (timeLaserD - 1000) * 2;
-    if (distanceD < 0) distanceD = 0;
-  
-  distanceI = (timeLaserI - 1000) * 2;
-    if (distanceI < 0) distanceI = 0;
+  distanceF = constrain((timeLaserF - 1000) / 5, 0, 130);
+  distanceD = constrain((timeLaserD - 1000) / 5, 0, 130);
+  distanceI = constrain((timeLaserI - 1000) / 5, 0, 130);
 
   Serial.print("F: ");
   Serial.print(distanceF);
