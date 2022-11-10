@@ -289,16 +289,16 @@ void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      
 void moverCamara() {
   if (posicionY >= 180 * EncodersPorCM) {
     if (posicionX > 20 * EncodersPorCM) {   // Revisar distancia
-      servo.write(20*sentidoGiro);          // Reviasr angulo
+      //servo.write(20*sentidoGiro);          // Reviasr angulo
     }
     if (posicionX < -20 * EncodersPorCM) {  // Revisar distancia
-      servo.write(10*sentidoGiro);          // Revisar angulo
+      //servo.write(10*sentidoGiro);          // Revisar angulo
     }
-    if (abs(posicionX) > 20) {              // Revisar distancia
-      servo.write(15*sentidoGiro);          // Revisar angulo
+    if (abs(posicionX) > 20*EncodersPorCM) {              // Revisar distancia
+      //servo.write(15*sentidoGiro);          // Revisar angulo
     }
   } else {
-    byte _ang = 90*giros - valorBrujula;
+    byte _ang = constrain(90*giros - valorBrujula + 90, 10, 170);
     servo.write(_ang);
   }
 }
@@ -331,7 +331,7 @@ void setup() {
   Wire1.begin(15,4,freq);
   delay(100);
 
-  estado = e::Final;
+  estado = e::Inicio;
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
@@ -383,29 +383,16 @@ void setup() {
   while (digitalRead(PIN_BOTON)){
     medirUltrasonidos();
     medirLaseres();
-    distanceTelemetria();
-    //EnviarTelemetria();
+    //distanceTelemetria();
+    EnviarTelemetria();
     delay(100);
   }
   digitalWrite(PIN_AZUL1, LOW);
   setEnable(1);
+  servo.write(90);
   delay(1000);
 
-  Serial.println("Servo va a moverse");
-
-  servo.write(0);
-  delay(300);
-  servo.write(180);
-  delay(300);
-  servo.write(0);
-  delay(300);
-  servo.write(180);
-  delay(300);
-  servo.write(90);
-
-  Serial.println("ya ta");
-
-  //setVelocidad(20);
+  setVelocidad(20);
   delay(500);
 }
 
@@ -450,6 +437,7 @@ void loop() {
   if (millis() > prev_ms_ultrasonidos) {
     prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
+    medirLaseres();
     if (!LecturaGiro) {
       pixy.ccc.getBlocks();
       }
@@ -460,8 +448,8 @@ void loop() {
     prev_ms_encoder = millis() + 30;
     prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
-    //EnviarTelemetria();
-    distanceTelemetria();
+    EnviarTelemetria();
+    //distanceTelemetria();
   }
 
   static uint32_t prev_ms_camara = millis();
@@ -483,8 +471,6 @@ void loop() {
     break;
 
   case e::Recto:
-    digitalWrite(PIN_ROJO1, LOW);
-    digitalWrite(PIN_VERDE1, LOW);
     AutoGiro = true;
     if ((giros == 12) && ((medidaencoder - MarcaEncoderTramo) >= 800)) {
       estado = e::Final;
@@ -502,11 +488,9 @@ void loop() {
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         esquivarDerecha = true;
-        digitalWrite(PIN_ROJO1, HIGH);
         direccionObjetivo = direccionObjetivo - 80;
       } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
         esquivarDerecha = false;
-        digitalWrite(PIN_VERDE1, HIGH);
         direccionObjetivo = direccionObjetivo + 80;
       }
       ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
@@ -558,7 +542,7 @@ void loop() {
   break;
 
   case e::Atras:
-    if ((MarcaEncoder - medidaencoder) >= 250){
+    if (posicionY <= 2350){
       setVelocidad(0);
       delay(20);
       setVelocidad(20);
@@ -573,19 +557,18 @@ void loop() {
 
   case e::Esquivar1:
     if (abs(posicionX) >= 280) {
-      digitalWrite(PIN_AZUL1, HIGH);
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 80;
       } else {
         direccionObjetivo = direccionObjetivo - 80;
       }
       MarcaEncoder = medidaencoder;
-      estado = e::Final;
+      estado = e::Esquivar2;
     }
   break;
 
   case e::Esquivar2:
-    if ((medidaencoder - MarcaEncoder) > 10 * EncodersPorCM) {
+    if ((medidaencoder - MarcaEncoder) > 20 * EncodersPorCM) {
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo + 40;
       } else {
@@ -596,21 +579,13 @@ void loop() {
   break;
   
   case e::Esquivar3:
-    if(abs(ErrorDireccionActual) <= 10){
+    if (abs(posicionX) <= 15 * EncodersPorCM){
       if (esquivarDerecha) {
         direccionObjetivo = direccionObjetivo - 40;
       } else {
         direccionObjetivo = direccionObjetivo + 40;
       }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      delay(10);
-      setVelocidad(20);
-      if ((medidaencoder - MarcaEncoderTramo) >= 1200){
-        estado = e::Recto;
-      } else {
-        estado = e::Esquivar4;
-      }
+      estado = e::Final;
     }
   break;
 
