@@ -11,6 +11,12 @@
 #define servoKD 20
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
+#define posicionKP 1
+#define posicionKD 0
+int posicionObjetivo = 0;
+int ErrorPosicionActual = 0;
+int ErrorPosicionAnterior = 0;
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -21,7 +27,7 @@ int offsetEncoder = 400;
 
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
-int direccionObjetivo = 0; 
+int direccionObjetivo = 0;
 
 bool GiroRealizado = true;
 bool PrimeraParada = true;
@@ -136,6 +142,12 @@ void medirUltrasonidos(){
     medidasUltrasonidos[iteracion] = Wire.read();
     iteracion++;
   }
+}
+
+
+void posicionamiento() {
+  ErrorPosicionActual = constrain(ErrorDireccion(posicionObjetivo, posicionX), -85, 85);
+  direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
 
 void EnviarServoTelemetria()
@@ -272,6 +284,7 @@ void loop() {
     double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
     posicionX = posicionX + dx;
     posicionY = posicionY + dy;
+    posicionamiento();
     prev_ms_posicion = millis() + 10;
   }
   
@@ -303,11 +316,18 @@ void loop() {
 
  switch (estado)
  {
+  /*
  case e::Inico:
   setVelocidad(30);
   if(medidasUltrasonidos[ultraFrontal] < 100){
     estado = e::DecidiendoGiroPrimero;
   }
+  break;
+  */
+  case e::Inico:
+    if (abs(ErrorPosicionActual <= 5 * 14)) {
+      estado = e::Final;
+    }
   break;
 
  case e::RectoRapido:

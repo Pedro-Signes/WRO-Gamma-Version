@@ -37,7 +37,8 @@ bool LecturaGiro = true;
 
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
-int direccionObjetivo = 0; 
+int direccionObjetivo = 0;
+int posicionObjetivo = 0;
 
 bool GiroRealizado = true;
 bool PrimeraParada = true;
@@ -271,7 +272,7 @@ void posicionInicial() {
   EnviarTelemetria();
 }
 
-void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con resta
+void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con resta
   if (corregir) {
     if (sentidoGiro) {
       posicionX = (50 - medidasUltrasonidos[ultraDerecho]) * EncodersPorCM;
@@ -283,6 +284,11 @@ void posicionamiento(bool corregir) { // Corregir True -> Con ultrasonidos      
     posicionX = posicionY - 250 * EncodersPorCM;
     posicionY = posicionX + 50 * EncodersPorCM;
   }
+}
+
+void posicionamiento() {
+  int errorPosicion = ErrorDireccion(posicionObjetivo, posicionX);
+  direccionObjetivo = 90*giros + errorPosicion;
 }
 
 // Mover el servo de la camara
@@ -577,7 +583,7 @@ void loop() {
       estado = e::Esquivar3;
     }
   break;
-  
+
   case e::Esquivar3:
     if (abs(posicionX) <= 15 * EncodersPorCM){
       if (esquivarDerecha) {
