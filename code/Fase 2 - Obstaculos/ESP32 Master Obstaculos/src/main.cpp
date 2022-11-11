@@ -28,6 +28,12 @@
 #define servoKD 15
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
+#define posicionKP 0.75
+#define posicionKD 5
+int posicionObjetivo = 0;
+int ErrorPosicionActual = 0;
+int ErrorPosicionAnterior = 0;
+
 float valorBrujula = 0;
 float offset;
 int vuelta = 1;
@@ -38,7 +44,6 @@ bool LecturaGiro = true;
 int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0;
-int posicionObjetivo = 0;
 
 bool GiroRealizado = true;
 bool PrimeraParada = true;
@@ -287,26 +292,34 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
 }
 
 void posicionamiento() {
-  int errorPosicion = ErrorDireccion(posicionObjetivo, posicionX);
-  direccionObjetivo = 90*giros + errorPosicion;
+  ErrorPosicionAnterior = ErrorPosicionActual;
+  ErrorPosicionActual = constrain(ErrorDireccion(posicionX, posicionObjetivo), -85, 85);
+  direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
 
-// Mover el servo de la camara
-void moverCamara() {
-  if (posicionY >= 180 * EncodersPorCM) {
-    if (posicionX > 20 * EncodersPorCM) {   // Revisar distancia
-      //servo.write(20*sentidoGiro);          // Reviasr angulo
-    }
-    if (posicionX < -20 * EncodersPorCM) {  // Revisar distancia
-      //servo.write(10*sentidoGiro);          // Revisar angulo
-    }
-    if (abs(posicionX) > 20*EncodersPorCM) {              // Revisar distancia
-      //servo.write(15*sentidoGiro);          // Revisar angulo
-    }
-  } else {
-    byte _ang = constrain(90*giros - valorBrujula + 90, 10, 170);
-    servo.write(_ang);
+void moverCamara(int angulo) {
+  byte _ang = map(angulo + 90, 0, 180, 0, 170);
+  servo.write(constrain(_ang, 0, 170));
+}
+
+// Mover el automaticamente el servo de la camara
+void autoMoverCamara() { //0-->85 min=0 max=170
+  int posicionBloqueX = 0;
+  int posicionBloqueY;
+  int _ang;
+  if (posicionY <= 85 * EncodersPorCM){
+    posicionBloqueY = 100 * EncodersPorCM;
+  } else if (posicionY <= 135) {
+    posicionBloqueY = 150 * EncodersPorCM;
+  } else if (posicionY <= 185) {
+    posicionBloqueY = 200 * EncodersPorCM;
+  } if (posicionY >= 195) {
+    posicionBloqueY = 300 * EncodersPorCM;
   }
+  _ang = atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
+  int _offsetLapAngle = 90 * giros;
+  if (!sentidoGiro) _offsetLapAngle = -_offsetLapAngle;
+  moverCamara(_ang - valorBrujula - _offsetLapAngle);
 }
 
 void setup() {
@@ -417,6 +430,7 @@ void loop() {
     if (!sentidoGiro) dx = -dx;
     posicionY = posicionY + dy;
     posicionX = posicionX + dx;
+    //posicionamiento();
     prev_ms_posicion = millis() + 10;
   }
 
@@ -461,7 +475,7 @@ void loop() {
   static uint32_t prev_ms_camara = millis();
   if (millis() > prev_ms_camara) {
     prev_ms_camara = millis() + 50;
-    moverCamara();
+    autoMoverCamara();
   }
 
   int mayor = -1;
@@ -470,7 +484,7 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 2500) {
+    if (posicionY > 2400) {
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }

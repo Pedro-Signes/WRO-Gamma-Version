@@ -11,11 +11,13 @@
 #define servoKD 20
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
-#define posicionKP 1
-#define posicionKD 0
+/*
+#define posicionKP 0.75
+#define posicionKD 5
 int posicionObjetivo = 0;
 int ErrorPosicionActual = 0;
 int ErrorPosicionAnterior = 0;
+*/
 
 float valorBrujula = 0;
 float offset;
@@ -90,11 +92,8 @@ long medirEncoder() {
 
 // Devuelve la posición donde hay que poner el servo
 int ErrorDireccion(int bearing, int target) {
-  int error = bearing - target;
-  if (error == 0) return 0;
-  if (error > 180) error -= 360;
-  if (error < -180) error += 360;
-  return -error;
+  int error = target - bearing;
+  return error;
 }
 
 
@@ -144,11 +143,13 @@ void medirUltrasonidos(){
   }
 }
 
-
+/*
 void posicionamiento() {
-  ErrorPosicionActual = constrain(ErrorDireccion(posicionObjetivo, posicionX), -85, 85);
+  ErrorPosicionAnterior = ErrorPosicionActual;
+  ErrorPosicionActual = constrain(ErrorDireccion(posicionX, posicionObjetivo), -85, 85);
   direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
+*/
 
 void EnviarServoTelemetria()
 {
@@ -199,6 +200,9 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print("\t");
   Serial.print(valorBrujula);
+  Serial.print(",");
+  Serial.print("\t");
+  //Serial.print(ErrorPosicionActual);
   Serial.print(",");
   Serial.print("\t");
   Serial.print(posicionX);
@@ -264,7 +268,6 @@ void setup() {
   };
 
   setEnable(1);
-
   delay(1000);
 
 }
@@ -284,7 +287,6 @@ void loop() {
     double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
     posicionX = posicionX + dx;
     posicionY = posicionY + dy;
-    posicionamiento();
     prev_ms_posicion = millis() + 10;
   }
   
@@ -316,19 +318,14 @@ void loop() {
 
  switch (estado)
  {
-  /*
+
  case e::Inico:
   setVelocidad(30);
   if(medidasUltrasonidos[ultraFrontal] < 100){
     estado = e::DecidiendoGiroPrimero;
   }
   break;
-  */
-  case e::Inico:
-    if (abs(ErrorPosicionActual <= 5 * 14)) {
-      estado = e::Final;
-    }
-  break;
+  
 
  case e::RectoRapido:
   if (giros == 12) {
