@@ -31,7 +31,7 @@
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
 #define posicionKP 0.75
-#define posicionKD 5
+#define posicionKD 0
 int posicionObjetivo = 0;
 int ErrorPosicionActual = 0;
 int ErrorPosicionAnterior = 0;
@@ -197,6 +197,20 @@ void enviarMensaje(String texto){
  Serial.println(texto);
 }
 
+void posicionTelemetria() {
+  Serial.print("\t");
+  Serial.print(posicionObjetivo);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(direccionObjetivo);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(posicionX);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.println(posicionY);
+}
+
 void distanceTelemetria() {
 Serial.print("\t");
 Serial.print(medidasUltrasonidos[ultraFrontal]);
@@ -290,7 +304,7 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
 void posicionamiento() {
   ErrorPosicionAnterior = ErrorPosicionActual;
   ErrorPosicionActual = constrain(ErrorDireccion(posicionX, posicionObjetivo), -85, 85);
-  direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
+  direccionObjetivo = 90*giros + constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -85, 85);
 }
 
 // angulo € [-90, 90]
@@ -398,11 +412,11 @@ void setup() {
 
   digitalWrite(LED_BUILTIN,HIGH);
   delay(2000);
-  while (digitalRead(PIN_BOTON)){
+  while (digitalRead(PIN_BOTON)) {
     medirUltrasonidos();
     medirLaseres();
     //distanceTelemetria();
-    EnviarTelemetria();
+    //EnviarTelemetria();
     delay(100);
   }
   setEnable(1);
@@ -423,11 +437,14 @@ void loop() {
 
   static uint32_t prev_ms_posicion = millis();
   if (millis() > prev_ms_posicion) {
-    double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
-    double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
-    posicionY = posicionY + dy;
-    posicionX = posicionX + dx;
-    posicionamiento();
+    if (medidaencoder - prev_medidaencoder) {
+      double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
+      double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
+      prev_medidaencoder = medidaencoder;
+      posicionY = posicionY + dy;
+      posicionX = posicionX + dx;
+      posicionamiento();
+    }
     prev_ms_posicion = millis() + 10;
   }
 
@@ -461,11 +478,16 @@ void loop() {
 
   static uint32_t prev_ms_encoder = millis();
   if (millis() > prev_ms_encoder) {
-    prev_ms_encoder = millis() + 30;
-    prev_medidaencoder = medidaencoder;
+    prev_ms_encoder = millis() + 15;
     medidaencoder = medirEncoder();
-    EnviarTelemetria();
+  }
+
+  static uint32_t prev_ms_telemetria = millis();
+  if (millis() > prev_ms_telemetria) {
+    //EnviarTelemetria();
     //distanceTelemetria();
+    posicionTelemetria();
+    prev_ms_telemetria = millis() + 30;
   }
 
   static uint32_t prev_ms_camara = millis();
@@ -500,14 +522,12 @@ void loop() {
       }
     }
     if (tamano > tamanoMinimodeEsquive){
-      delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
         posicionObjetivo = -20 * EncodersPorCM;
       } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
         posicionObjetivo = 20 * EncodersPorCM;
       }
     }
-    
   break;
 
   case e::DecidiendoGiro:
