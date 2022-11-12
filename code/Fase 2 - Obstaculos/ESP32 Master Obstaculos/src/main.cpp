@@ -15,12 +15,14 @@
 
 #define PIN_BOTON 13
 
+/*
 #define PIN_ROJO1 25
 #define PIN_VERDE1 26
 #define PIN_AZUL1 27
 #define PIN_ROJO2 14
 #define PIN_VERDE2 12
-//#define PIN_BOCINA 33
+#define PIN_BOCINA 33
+*/
 
 #define PIN_SERVO_CAM 33      // Servo de la camara
 
@@ -34,11 +36,11 @@ int posicionObjetivo = 0;
 int ErrorPosicionActual = 0;
 int ErrorPosicionAnterior = 0;
 
-float valorBrujula = 0;
+float valorBrujula = 0;   // + anti-clockwise | - clockwise
 float offset;
 int vuelta = 1;
 int giros = 0;
-bool sentidoGiro = true;      // True -> Izquierda      False -> Derecha
+bool sentidoGiro = true;      // True -> Izquierda   |   False -> Derecha
 bool LecturaGiro = true;
 
 int ErrorDireccionAnterior = 0;
@@ -56,8 +58,6 @@ MPU9250 mpu;
 Pixy2 pixy;
 Servo servo;
 
-bool esquivarDerecha = false;
-
 long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
@@ -74,16 +74,12 @@ long MarcaEncoderTramo = -2000;
 
 bool forward = true;
 
-double posicionX = 0;
-double posicionY = 0;
+double posicionX = 0;   // 0 en el centro  | + izquierda | - derecha
+double posicionY = 0;   // 0 pared trasera | + forward   | - backwards
 
 enum e{
   Inicio,
   Recto,
-  Esquivar1, // Esquivar Bloques
-  Esquivar2,
-  Esquivar3,
-  Esquivar4,
   DecidiendoGiro,
   Maniobra1, // Girar
   Maniobra2,
@@ -297,23 +293,24 @@ void posicionamiento() {
   direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
 
-void moverCamara(int angulo) {
+// angulo € [-90, 90]
+void moverCamara(int angulo) {  // 0 == 85 | min == 0 | max == 170
   byte _ang = map(angulo + 90, 0, 180, 0, 170);
   servo.write(constrain(_ang, 0, 170));
 }
 
 // Mover el automaticamente el servo de la camara
-void autoMoverCamara() { //0-->85 min=0 max=170
+void autoMoverCamara() {
   int posicionBloqueX = 0;
-  int posicionBloqueY;
+  int posicionBloqueY = 200 * EncodersPorCM;
   int _ang;
   if (posicionY <= 85 * EncodersPorCM){
     posicionBloqueY = 100 * EncodersPorCM;
-  } else if (posicionY <= 135) {
+  } else if (posicionY <= 135 * EncodersPorCM) {
     posicionBloqueY = 150 * EncodersPorCM;
-  } else if (posicionY <= 185) {
+  } else if (posicionY <= 185 * EncodersPorCM) {
     posicionBloqueY = 200 * EncodersPorCM;
-  } if (posicionY >= 195) {
+  } if (posicionY >= 195 * EncodersPorCM) {
     posicionBloqueY = 300 * EncodersPorCM;
   }
   _ang = atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
@@ -332,18 +329,22 @@ void setup() {
 	servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO_CAM);
 
+  servo.write(85);
+
   Serial.begin(115200);
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
   pinMode(LED_BUILTIN,OUTPUT);
   
+  /*
   pinMode(PIN_VERDE1,OUTPUT);
   pinMode(PIN_VERDE2,OUTPUT);
   pinMode(PIN_ROJO1,OUTPUT);
   pinMode(PIN_ROJO2,OUTPUT);
   pinMode(PIN_AZUL1,OUTPUT);
-  //pinMode(PIN_BOCINA,OUTPUT);
+  pinMode(PIN_BOCINA,OUTPUT);
+  */
 
   Wire.begin();
   uint32_t freq = 400000;
@@ -391,13 +392,11 @@ void setup() {
   posicionInicial();
 
   for( int i = 0; i < 10; i++){
-    //pixy.changeProg("line");
-    Serial.println(pixy.changeProg("line"));
+    pixy.changeProg("line");
     delay(100);
   }
 
   digitalWrite(LED_BUILTIN,HIGH);
-  digitalWrite(PIN_AZUL1, HIGH);
   delay(2000);
   while (digitalRead(PIN_BOTON)){
     medirUltrasonidos();
@@ -406,7 +405,6 @@ void setup() {
     EnviarTelemetria();
     delay(100);
   }
-  digitalWrite(PIN_AZUL1, LOW);
   setEnable(1);
   servo.write(90);
   delay(1000);
@@ -427,10 +425,9 @@ void loop() {
   if (millis() > prev_ms_posicion) {
     double dy = (medidaencoder - prev_medidaencoder) * cos(valorBrujula * (M_PI/180));
     double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
-    if (!sentidoGiro) dx = -dx;
     posicionY = posicionY + dy;
     posicionX = posicionX + dx;
-    //posicionamiento();
+    posicionamiento();
     prev_ms_posicion = millis() + 10;
   }
 
@@ -452,7 +449,6 @@ void loop() {
     prev_ms_direccion = millis() + 10;    
   }
   
-    
   static uint32_t prev_ms_ultrasonidos = millis();
   if (millis() > prev_ms_ultrasonidos) {
     prev_ms_ultrasonidos = millis() + 20;
@@ -484,7 +480,7 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 2400) {
+    if (posicionY > 150 * EncodersPorCM) {
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
@@ -502,71 +498,45 @@ void loop() {
           tamano = pixy.ccc.blocks[i].m_height;
         }
       }
-    } 
+    }
     if (tamano > tamanoMinimodeEsquive){
-      setVelocidad(0);
       delay(50);
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        esquivarDerecha = true;
-        direccionObjetivo = direccionObjetivo - 80;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature){
-        esquivarDerecha = false;
-        direccionObjetivo = direccionObjetivo + 80;
+        posicionObjetivo = -20 * EncodersPorCM;
+      } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
+        posicionObjetivo = 20 * EncodersPorCM;
       }
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      setGiro(ErrorDireccionActual);
-      setVelocidad(20);
-      estado = e::Esquivar1;
     }
-    if ((medidasUltrasonidos[ultraFrontal] <= 20) && ((medidaencoder - MarcaEncoderTramo) >= 1200)){
-      estado = e::DecidiendoGiro;
-    } else if (medidasUltrasonidos[ultraFrontal] <= 15){
-      setVelocidad(0);
-      MarcaEncoder = medidaencoder;
-      setVelocidad(-20);
-      estado = e::Atras;
-    }
+    
   break;
 
   case e::DecidiendoGiro:
-    if (LecturaGiro){
+    if (LecturaGiro) {
       pixy.line.getMainFeatures(LINE_VECTOR);
       delay(100);
 
       pixy.line.numVectors;
       
-      if (pixy.line.numVectors){
+      if (pixy.line.numVectors) {
         float x0 = pixy.line.vectors[0].m_x0;
         float y0 = pixy.line.vectors[0].m_y0;
         float x1 = pixy.line.vectors[0].m_x1;
         float y1 = pixy.line.vectors[0].m_y1;
-        float m = (y1 - y0)*(x1 - x0);
-        if (m < 0){
+        float m = (y1 - y0) * (x1 - x0);
+        if (m < 0) {
           sentidoGiro = false;
-          posicionX = -posicionX;
-        } else if(m > 0){
+        } else if (m > 0) {
           sentidoGiro = true;
         }
         LecturaGiro = false;
         MarcaEncoder = medidaencoder;
-        setVelocidad(-20);
         pixy.changeProg("block");
-        estado = e::Atras;
+        setVelocidad(20);
+        estado = e::Recto;
       }
       delay(100);
     } else {
-        setVelocidad(0);
-        delay(20);
         estado = e::Maniobra1;
-    }
-  break;
-
-  case e::Atras:
-    if (posicionY <= 2350){
-      setVelocidad(0);
-      delay(20);
-      setVelocidad(20);
-      estado = e::Recto;
     }
   break;
 
@@ -575,49 +545,6 @@ void loop() {
     setEnable(0);
   break;
 
-  case e::Esquivar1:
-    if (abs(posicionX) >= 280) {
-      if (esquivarDerecha) {
-        direccionObjetivo = direccionObjetivo + 80;
-      } else {
-        direccionObjetivo = direccionObjetivo - 80;
-      }
-      MarcaEncoder = medidaencoder;
-      estado = e::Esquivar2;
-    }
-  break;
-
-  case e::Esquivar2:
-    if ((medidaencoder - MarcaEncoder) > 20 * EncodersPorCM) {
-      if (esquivarDerecha) {
-        direccionObjetivo = direccionObjetivo + 40;
-      } else {
-        direccionObjetivo = direccionObjetivo - 40;
-      }
-      estado = e::Esquivar3;
-    }
-  break;
-
-  case e::Esquivar3:
-    if (abs(posicionX) <= 15 * EncodersPorCM){
-      if (esquivarDerecha) {
-        direccionObjetivo = direccionObjetivo - 40;
-      } else {
-        direccionObjetivo = direccionObjetivo + 40;
-      }
-      estado = e::Final;
-    }
-  break;
-
-  case e::Esquivar4:
-    if(abs(ErrorDireccionActual) <= 15){
-      setVelocidad(0);
-      delay(20);
-      MarcaEncoder = medidaencoder;
-      setVelocidad(-20);
-      estado = e::Atras;
-    }
-  break;
 
  }
 }
