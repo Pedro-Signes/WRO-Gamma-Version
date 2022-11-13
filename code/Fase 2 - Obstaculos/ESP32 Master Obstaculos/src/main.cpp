@@ -7,7 +7,8 @@
 #include <Pixy2.h>
 #include <ESP32Servo.h>
 
-#define tamanoMinimodeEsquive 55
+#define tamanoMinimodeEsquive 45
+//#define tamanoMinimodeEsquive 55
 #define GreenSignature 1
 #define RedSignature 2
 
@@ -34,7 +35,7 @@
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
 #define posicionKP 0.8
-#define posicionKD 40
+#define posicionKD 30
 int posicionObjetivo = 0;
 int ErrorPosicionActual = 0;
 int ErrorPosicionAnterior = 0;
@@ -284,10 +285,11 @@ void EnviarTelemetria()
 void posicionInicial() {
   medirUltrasonidos();
   if ((medidasUltrasonidos[ultraTrasero] > 90) && (medidasUltrasonidos[ultraTrasero] < 140)){
-    posicionY = 100 * EncodersPorCM;
+    
   } else if ((medidasUltrasonidos[ultraFrontal] > 90) && (medidasUltrasonidos[ultraFrontal] < 140)){
     posicionY = 160 * EncodersPorCM;
   }
+  posicionY = 100 * EncodersPorCM; //aaaaaatenccccciiiiooon, borar cuando el sensor funcione
   EnviarTelemetria();
 }
 
@@ -301,8 +303,9 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
     posicionY = medidasUltrasonidos[ultraTrasero] * EncodersPorCM;
   } else {
     double _posX = posicionX;
-    posicionX = 250 * EncodersPorCM - posicionY - 20 * EncodersPorCM;
+    posicionX = 250 * EncodersPorCM - posicionY- 10 * EncodersPorCM;
     posicionY = _posX + 50 * EncodersPorCM;
+    posicionObjetivo = -10;
   }
 }
 
@@ -320,7 +323,7 @@ void checkGiro() {
     if (posicionX > 0) {
       posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
     } else {
-      posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM - OffsetMuroExterior * EncodersPorCM;
+      posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
     }
     corregirX = false;
   }
@@ -330,7 +333,11 @@ void posicionamiento() {
   ErrorPosicionAnterior = ErrorPosicionActual;
   ErrorPosicionActual = ErrorDireccion(posicionX, posicionObjetivo);
   //direccionObjetivo = 90*giros + constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -85, 85);
-  direccionObjetivo = constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -85, 85);
+  if (posicionY <= 95 * EncodersPorCM) {
+    direccionObjetivo = constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -95, 95);
+  } else {
+    direccionObjetivo = constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -85, 85);
+  }
 }
 
 // angulo € [-90, 90]
@@ -529,7 +536,7 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 50 * EncodersPorCM) { // 15000000000000000000000000000000000000000000000000000000
+    if (posicionY > 130 * EncodersPorCM) { 
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
@@ -537,10 +544,9 @@ void loop() {
 
   case e::Recto:
     AutoGiro = true;
-    posicionObjetivo = -25 * EncodersPorCM;
-    if ((giros == 12) && ((medidaencoder - MarcaEncoderTramo) >= 800)) {
+    if ((giros == 12) && (posicionY >= 150 * EncodersPorCM)) {
       estado = e::Final;
-    }/*
+    }
     if(pixy.ccc.numBlocks){
       for (int i=0; i < pixy.ccc.numBlocks; i++){
         if(pixy.ccc.blocks[i].m_height > tamano){
@@ -555,7 +561,7 @@ void loop() {
       } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
         posicionObjetivo = 25 * EncodersPorCM;
       }
-    }*/
+    }
   break;
 
   case e::DecidiendoGiro:
@@ -573,10 +579,10 @@ void loop() {
         float m = (y1 - y0) * (x1 - x0);
         if (m < 0) {
           sentidoGiro = false;
-          Serial.print("Sentido false");
+          Serial.println("Sentido false");
         } else if (m > 0) {
           sentidoGiro = true;
-          Serial.print("Sentido false");
+          Serial.println("Sentido true");
         }
         LecturaGiro = false;
         MarcaEncoder = medidaencoder;
@@ -584,8 +590,6 @@ void loop() {
         setVelocidad(20);
         estado = e::Recto;
       }
-    } else {
-        estado = e::Maniobra1;
     }
   break;
 
