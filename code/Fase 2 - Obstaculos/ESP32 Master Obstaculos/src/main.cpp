@@ -86,14 +86,6 @@ enum e{
   Inicio,
   Recto,
   DecidiendoGiro,
-  Maniobra1, // Girar
-  Maniobra2,
-  Posicionamiento,
-  ComprobacionPosicion,
-  Centrar1,
-  Centrar2,
-  Centrar3,
-  Atras,
   Final
 };
 
@@ -285,7 +277,7 @@ void EnviarTelemetria()
 void posicionInicial() {
   medirUltrasonidos();
   if ((medidasUltrasonidos[ultraTrasero] > 90) && (medidasUltrasonidos[ultraTrasero] < 140)){
-    
+    posicionY = 100 * EncodersPorCM;
   } else if ((medidasUltrasonidos[ultraFrontal] > 90) && (medidasUltrasonidos[ultraFrontal] < 140)){
     posicionY = 160 * EncodersPorCM;
   }
@@ -303,27 +295,52 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
     posicionY = medidasUltrasonidos[ultraTrasero] * EncodersPorCM;
   } else {
     double _posX = posicionX;
-    posicionX = 250 * EncodersPorCM - posicionY- 10 * EncodersPorCM;
-    posicionY = _posX + 50 * EncodersPorCM;
+    posicionX = 250 * EncodersPorCM - posicionY - 10 * EncodersPorCM;
+    if (sentidoGiro) {
+      posicionY = _posX + 50 * EncodersPorCM;
+    } else {
+      posicionX = -posicionX;
+      posicionY = -_posX + 50 * EncodersPorCM;
+    }
     posicionObjetivo = -10;
   }
 }
 
 void checkGiro() {
-  if ((posicionY >= 170 * EncodersPorCM) && (posicionX >= 0)) {
-    resetPosicion(false);
-    giros ++;
-    corregirX = true;
-  } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX <= 0)) {
-    resetPosicion(false);
-    giros ++;
-    corregirX = true;
+  if (sentidoGiro) {
+    if ((posicionY >= 170 * EncodersPorCM) && (posicionX >= 0)) {
+      resetPosicion(false);
+      giros ++;
+      corregirX = true;
+    } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX <= 0)) {
+      resetPosicion(false);
+      giros ++;
+      corregirX = true;
+    }
+  } else {
+    if ((posicionY >= 170 * EncodersPorCM) && (posicionX <= 0)) {
+      resetPosicion(false);
+      giros ++; // giros --;
+      corregirX = true;
+    } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX >= 0)) {
+      resetPosicion(false);
+      giros ++; // giros --;
+      corregirX = true;
+    }
   }
   if ((posicionY >= 125 * EncodersPorCM) && corregirX) {  // Para corregir posicion X en mitad de la recta
-    if (posicionX > 0) {
-      posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+    if (sentidoGiro) {
+      if (posicionX > 0) {
+        posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+      } else {
+        posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+      }
     } else {
-      posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+      if (posicionX < 0) {
+        posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+      } else {
+        posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
+      }
     }
     corregirX = false;
   }
@@ -332,7 +349,6 @@ void checkGiro() {
 void posicionamiento() {
   ErrorPosicionAnterior = ErrorPosicionActual;
   ErrorPosicionActual = ErrorDireccion(posicionX, posicionObjetivo);
-  //direccionObjetivo = 90*giros + constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -85, 85);
   if (posicionY <= 95 * EncodersPorCM) {
     direccionObjetivo = constrain(posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior), -95, 95);
   } else {
@@ -359,12 +375,14 @@ void autoMoverCamara() {
     posicionBloqueY = 200 * EncodersPorCM;
   }
   _ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
-  int _offsetLapAngle = 90 * giros;
+  int _offsetLapAngle = 90 * giros; // Probar negativo
   if (!sentidoGiro) _offsetLapAngle = -_offsetLapAngle;
   moverCamara(_ang - valorBrujula - _offsetLapAngle);
 }
 
 void setup() {
+  delay(500);
+
   pixy.init();
   
   ESP32PWM::allocateTimer(0);
@@ -441,8 +459,8 @@ void setup() {
     delay(100);
   }
 
+  delay(1000);
   digitalWrite(LED_BUILTIN,HIGH);
-  delay(2000);
   while (digitalRead(PIN_BOTON)) {
     medirUltrasonidos();
     medirLaseres();
@@ -470,7 +488,7 @@ void loop() {
   if (millis() > prev_ms_posicion) {
     medidaencoder = medirEncoder();
     if (medidaencoder != prev_medidaencoder) {
-      double dy = (medidaencoder - prev_medidaencoder) * cos((valorBrujula - 90 * giros) * (M_PI/180));
+      double dy = (medidaencoder - prev_medidaencoder) * cos((valorBrujula - 90 * giros) * (M_PI/180)); // Cambiar signo a giros
       double dx = (medidaencoder - prev_medidaencoder) * sin((valorBrujula - 90 * giros) * (M_PI/180));
       prev_medidaencoder = medidaencoder;
       posicionY = posicionY + dy;
@@ -483,7 +501,7 @@ void loop() {
 
   static uint32_t prev_ms_direccion = millis();
   if (millis() > prev_ms_direccion) {
-    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula - 90 * giros, direccionObjetivo), -127, 127);
+    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula - 90 * giros, direccionObjetivo), -127, 127);  // Cambiar signo de giros
     int _setAngle = constrain(servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior), -255, 255);
     if (_setAngle != _setAngleAnterior) {
       if (AutoGiro) {
@@ -544,7 +562,7 @@ void loop() {
 
   case e::Recto:
     AutoGiro = true;
-    if ((giros == 12) && (posicionY >= 150 * EncodersPorCM)) {
+    if ((giros == 12) && (posicionY >= 150 * EncodersPorCM)) {  // abs(giros)
       estado = e::Final;
     }
     if(pixy.ccc.numBlocks){
