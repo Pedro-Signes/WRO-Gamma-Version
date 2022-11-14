@@ -117,6 +117,26 @@ void medirUltrasonidos() {
   }
 }
 
+void medirLaseres();
+void distanceTelemetria();
+
+void MantenimientoSensores(){
+  while(true){
+    Wire.beginTransmission(4);
+    Wire.write(6);
+    Wire.endTransmission();
+    Wire.requestFrom(4,4);
+    byte iteracion = 0;
+    while (Wire.available()) {
+      medidasUltrasonidos[iteracion] = Wire.read();
+      iteracion ++;
+    }
+    medirLaseres();
+    distanceTelemetria();
+    delay(100);
+  }
+}
+
 void setVelocidad(int velocidad){
   Wire.beginTransmission(4);
   Wire.write(3);
@@ -301,11 +321,11 @@ void checkGiro() {
   } else {
     if ((posicionY >= 170 * EncodersPorCM) && (posicionX <= 0)) {
       resetPosicion(false);
-      giros ++; // giros --;
+      giros --;
       corregirX = true;
     } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX >= 0)) {
       resetPosicion(false);
-      giros ++; // giros --;
+      giros --;
       corregirX = true;
     }
   }
@@ -353,17 +373,16 @@ void autoMoverCamara() {
   double posicionBloqueX = 0;
   double posicionBloqueY = 200 * EncodersPorCM;
   int _ang;
-  if (posicionY <= 85 * EncodersPorCM){
-    posicionBloqueY = 100 * EncodersPorCM;
-  } else if (posicionY <= 135 * EncodersPorCM) {
-    posicionBloqueY = 150 * EncodersPorCM;
-  } else if (posicionY <= 185 * EncodersPorCM) {
-    posicionBloqueY = 200 * EncodersPorCM;
+  if (posicionY <= 75 * EncodersPorCM){
+    posicionBloqueY = 80 * EncodersPorCM;
+  } else if (posicionY <= 125 * EncodersPorCM) {
+    posicionBloqueY = 130 * EncodersPorCM;
+  } else if (posicionY <= 175 * EncodersPorCM) {
+    posicionBloqueY = 180 * EncodersPorCM;
   }
   _ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
-  int _offsetLapAngle = 90 * giros; // Probar negativo
-  if (!sentidoGiro) _offsetLapAngle = -_offsetLapAngle;
-  moverCamara(_ang - valorBrujula - _offsetLapAngle);
+  int _offsetLapAngle = 90 * giros;
+  moverCamara(_ang - valorBrujula + _offsetLapAngle);
 }
 
 // Comienzo del programa
@@ -391,6 +410,8 @@ void setup() {
   uint32_t freq = 400000;
   Wire1.begin(15,4,freq);
   delay(100);
+
+  //MantenimientoSensores();
 
   estado = e::Inicio;
 
@@ -451,7 +472,7 @@ void setup() {
   setEnable(1);
   delay(1000);
 
-  setVelocidad(20);
+  setVelocidad(30);
   delay(500);
 }
 
@@ -467,7 +488,7 @@ void loop() {
   if (millis() > prev_ms_posicion) {
     medidaencoder = medirEncoder();
     if (medidaencoder != prev_medidaencoder) {
-      double dy = (medidaencoder - prev_medidaencoder) * cos((valorBrujula - 90 * giros) * (M_PI/180)); // Cambiar signo a giros
+      double dy = (medidaencoder - prev_medidaencoder) * cos((valorBrujula - 90 * giros) * (M_PI/180));
       double dx = (medidaencoder - prev_medidaencoder) * sin((valorBrujula - 90 * giros) * (M_PI/180));
       prev_medidaencoder = medidaencoder;
       posicionY = posicionY + dy;
@@ -480,7 +501,7 @@ void loop() {
 
   static uint32_t prev_ms_direccion = millis();
   if (millis() > prev_ms_direccion) {
-    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula - 90 * giros, direccionObjetivo), -127, 127);  // Cambiar signo de giros
+    ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula - 90 * giros, direccionObjetivo), -127, 127);
     int _setAngle = constrain(servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior), -255, 255);
     if (_setAngle != _setAngleAnterior) {
       if (forward) {
@@ -526,14 +547,14 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 130 * EncodersPorCM) { 
+    if (posicionY > 160 * EncodersPorCM) { 
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
     break;
 
   case e::Recto:
-    if ((giros == 12) && (posicionY >= 150 * EncodersPorCM)) {  // abs(giros)
+    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
       estado = e::Final;
     }
     if (pixy.ccc.numBlocks) {
@@ -560,15 +581,15 @@ void loop() {
     pixy.line.numVectors;
     
     if (pixy.line.numVectors) {
-      uint8_t x0 = pixy.line.vectors[0].m_x0;
-      uint8_t y0 = pixy.line.vectors[0].m_y0;
-      uint8_t x1 = pixy.line.vectors[0].m_x1;
-      uint8_t y1 = pixy.line.vectors[0].m_y1;
-      int m = (y1 - y0) * (x1 - x0);
-      if (m < 0) {
+      int x0 = pixy.line.vectors[0].m_x0;
+      int y0 = pixy.line.vectors[0].m_y0;
+      int x1 = pixy.line.vectors[0].m_x1;
+      int y1 = pixy.line.vectors[0].m_y1;
+      long m = (y1 - y0) * (x1 - x0);
+      if (m > 0) {
         sentidoGiro = false;
         Serial.println("Sentido false");
-      } else if (m > 0) {
+      } else if (m < 0) {
         sentidoGiro = true;
         Serial.println("Sentido true");
       }
