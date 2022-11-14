@@ -143,6 +143,8 @@ void medirUltrasonidos(){
   }
 }
 
+
+
 /*
 void posicionamiento() {
   ErrorPosicionAnterior = ErrorPosicionActual;
