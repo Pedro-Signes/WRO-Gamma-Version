@@ -7,8 +7,7 @@
 #include <Pixy2.h>
 #include <ESP32Servo.h>
 
-#define tamanoMinimodeEsquive 45
-//#define tamanoMinimodeEsquive 55
+#define tamanoMinimodeEsquive 45  //55
 #define GreenSignature 1
 #define RedSignature 2
 
@@ -19,18 +18,9 @@
 #define OffsetMuroInterior 5
 #define OffsetMuroExterior 5
 
-/*
-#define PIN_ROJO1 25
-#define PIN_VERDE1 26
-#define PIN_AZUL1 27
-#define PIN_ROJO2 14
-#define PIN_VERDE2 12
-#define PIN_BOCINA 33
-*/
-
 #define PIN_SERVO_CAM 33      // Servo de la camara
 
-#define servoKP 1.5 //10
+#define servoKP 1.5
 #define servoKD 0
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
@@ -42,7 +32,6 @@ int ErrorPosicionAnterior = 0;
 
 float valorBrujula = 0;   // + anti-clockwise | - clockwise
 float offset;
-int vuelta = 1;
 int giros = 0;
 bool sentidoGiro = true;      // True -> Izquierda   |   False -> Derecha
 bool LecturaGiro = true;
@@ -51,9 +40,6 @@ int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0;
 
-bool GiroRealizado = true;
-bool PrimeraParada = true;
-bool SegundaParada = true;
 bool AutoGiro = true;
 
 uint32_t Duracion_de_la_muestra = 0;
@@ -62,7 +48,6 @@ MPU9250 mpu;
 Pixy2 pixy;
 Servo servo;
 
-long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
 byte ultraDerecho = 1;
@@ -74,7 +59,6 @@ byte medidasLaseres[3];
 long medidaencoder = 0;
 long prev_medidaencoder = 0;
 long MarcaEncoder = 0;
-long MarcaEncoderTramo = -2000;
 
 bool forward = true;
 
@@ -102,7 +86,7 @@ byte estado;
 }*/
 
 // Devuelve la posición donde hay que poner el servo
-int ErrorDireccion(int bearing, int target){
+int ErrorDireccion(int bearing, int target) {
   int error = target - bearing;
   return error;
 }
@@ -123,25 +107,16 @@ long medirEncoder() {
   return _medidaEncoder;
 }
 
-void setEnable (int motrorEnable){
+void medirUltrasonidos() {
   Wire.beginTransmission(4);
-  Wire.write(5);
-  Wire.write(motrorEnable);
+  Wire.write(2);
   Wire.endTransmission();
-}
-
-void setGiro(int posicionServo){
-  Wire.beginTransmission(4);
-  Wire.write(4);
- 
-  if(posicionServo<0){
-    Wire.write(-posicionServo);
-    Wire.write(0);
-  }else{
-    Wire.write(posicionServo);
-    Wire.write(1);
+  Wire.requestFrom(4,4);
+  byte iteracion = 0;
+  while (Wire.available()) {
+    medidasUltrasonidos[iteracion] = Wire.read();
+    iteracion ++;
   }
-  Wire.endTransmission();
 }
 
 void setVelocidad(int velocidad){
@@ -159,16 +134,24 @@ void setVelocidad(int velocidad){
   Wire.endTransmission();
 }
 
-void medirUltrasonidos() {
+void setGiro(int posicionServo){
   Wire.beginTransmission(4);
-  Wire.write(2);
-  Wire.endTransmission();
-  Wire.requestFrom(4,4);
-  byte iteracion = 0;
-  while (Wire.available()) {
-    medidasUltrasonidos[iteracion] = Wire.read();
-    iteracion ++;
+  Wire.write(4);
+  if(posicionServo<0){
+    Wire.write(-posicionServo);
+    Wire.write(0);
+  }else{
+    Wire.write(posicionServo);
+    Wire.write(1);
   }
+  Wire.endTransmission();
+}
+
+void setEnable(int motrorEnable){
+  Wire.beginTransmission(4);
+  Wire.write(5);
+  Wire.write(motrorEnable);
+  Wire.endTransmission();
 }
 
 // I2C Arduino Nano Every Slave 2
@@ -328,6 +311,9 @@ void checkGiro() {
       corregirX = true;
     }
   }
+}
+
+void corregirPosicion() {
   if ((posicionY >= 125 * EncodersPorCM) && corregirX) {  // Para corregir posicion X en mitad de la recta
     if (sentidoGiro) {
       if (posicionX > 0) {
@@ -356,6 +342,8 @@ void posicionamiento() {
   }
 }
 
+// Camara
+
 // angulo € [-90, 90]
 void moverCamara(int angulo) {  // 0 == 85 | min == 0 | max == 170
   byte _ang = map(angulo + 90, 0, 180, 0, 170);
@@ -380,34 +368,26 @@ void autoMoverCamara() {
   moverCamara(_ang - valorBrujula - _offsetLapAngle);
 }
 
+// Comienzo del programa
+
 void setup() {
   delay(500);
 
   pixy.init();
   
-  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(0); // Iniciar timers del PWM
 	ESP32PWM::allocateTimer(1);
 	ESP32PWM::allocateTimer(2);
 	ESP32PWM::allocateTimer(3);
 	servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO_CAM);
-
-  servo.write(85);
+  moverCamara(0);
 
   Serial.begin(115200);
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
   pinMode(LED_BUILTIN,OUTPUT);
-  
-  /*
-  pinMode(PIN_VERDE1,OUTPUT);
-  pinMode(PIN_VERDE2,OUTPUT);
-  pinMode(PIN_ROJO1,OUTPUT);
-  pinMode(PIN_ROJO2,OUTPUT);
-  pinMode(PIN_AZUL1,OUTPUT);
-  pinMode(PIN_BOCINA,OUTPUT);
-  */
 
   Wire.begin();
   uint32_t freq = 400000;
@@ -454,13 +434,14 @@ void setup() {
 
   posicionInicial();
 
-  for( int i = 0; i < 10; i++){
+  for (int i = 0; i < 10; i++) {
     pixy.changeProg("line");
     delay(100);
   }
 
   delay(1000);
   digitalWrite(LED_BUILTIN,HIGH);
+
   while (digitalRead(PIN_BOTON)) {
     medirUltrasonidos();
     medirLaseres();
@@ -468,8 +449,8 @@ void setup() {
     //EnviarTelemetria();
     delay(100);
   }
+
   setEnable(1);
-  servo.write(90);
   delay(1000);
 
   setVelocidad(20);
@@ -590,11 +571,11 @@ void loop() {
       pixy.line.numVectors;
       
       if (pixy.line.numVectors) {
-        float x0 = pixy.line.vectors[0].m_x0;
-        float y0 = pixy.line.vectors[0].m_y0;
-        float x1 = pixy.line.vectors[0].m_x1;
-        float y1 = pixy.line.vectors[0].m_y1;
-        float m = (y1 - y0) * (x1 - x0);
+        uint8_t x0 = pixy.line.vectors[0].m_x0;
+        uint8_t y0 = pixy.line.vectors[0].m_y0;
+        uint8_t x1 = pixy.line.vectors[0].m_x1;
+        uint8_t y1 = pixy.line.vectors[0].m_y1;
+        uint16_t m = (y1 - y0) * (x1 - x0);
         if (m < 0) {
           sentidoGiro = false;
           Serial.println("Sentido false");
@@ -603,7 +584,6 @@ void loop() {
           Serial.println("Sentido true");
         }
         LecturaGiro = false;
-        MarcaEncoder = medidaencoder;
         pixy.changeProg("block");
         setVelocidad(20);
         estado = e::Recto;
@@ -616,6 +596,6 @@ void loop() {
     setEnable(0);
   break;
 
-
  }
+
 }
