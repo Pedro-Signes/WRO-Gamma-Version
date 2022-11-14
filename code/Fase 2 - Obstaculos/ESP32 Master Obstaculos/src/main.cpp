@@ -40,8 +40,6 @@ int ErrorDireccionAnterior = 0;
 int ErrorDireccionActual = 0;
 int direccionObjetivo = 0;
 
-bool AutoGiro = true;
-
 uint32_t Duracion_de_la_muestra = 0;
 
 MPU9250 mpu;
@@ -268,7 +266,7 @@ void posicionInicial() {
   EnviarTelemetria();
 }
 
-void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con resta
+void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con operaciones
   if (corregir) {
     if (sentidoGiro) {
       posicionX = (50 - medidasUltrasonidos[ultraDerecho]) * EncodersPorCM;
@@ -485,14 +483,12 @@ void loop() {
     ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula - 90 * giros, direccionObjetivo), -127, 127);  // Cambiar signo de giros
     int _setAngle = constrain(servoKP * ErrorDireccionActual + servoKD * (ErrorDireccionActual - ErrorDireccionAnterior), -255, 255);
     if (_setAngle != _setAngleAnterior) {
-      if (AutoGiro) {
-        if (forward) {
-          setGiro(_setAngle);
-        } else {
-          setGiro(-_setAngle);
-        }
-        _setAngleAnterior = _setAngle;
+      if (forward) {
+        setGiro(_setAngle);
+      } else {
+        setGiro(-_setAngle);
       }
+      _setAngleAnterior = _setAngle;
     }
     ErrorDireccionAnterior = ErrorDireccionActual;
     prev_ms_direccion = millis() + 10;    
@@ -504,9 +500,10 @@ void loop() {
     prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
     medirLaseres();
+    checkGiro();
     if (!LecturaGiro) {
       pixy.ccc.getBlocks();
-      }
+    }
   }
 
   static uint32_t prev_ms_telemetria = millis();
@@ -523,12 +520,6 @@ void loop() {
     autoMoverCamara();
   }
 
-  static uint32_t prev_ms_giro = millis();
-  if (millis() > prev_ms_giro) {
-    prev_ms_giro = millis() + 20;
-    checkGiro();
-  }
-
   int mayor = -1;
   int tamano = 0;
   
@@ -542,13 +533,12 @@ void loop() {
     break;
 
   case e::Recto:
-    AutoGiro = true;
     if ((giros == 12) && (posicionY >= 150 * EncodersPorCM)) {  // abs(giros)
       estado = e::Final;
     }
-    if(pixy.ccc.numBlocks){
-      for (int i=0; i < pixy.ccc.numBlocks; i++){
-        if(pixy.ccc.blocks[i].m_height > tamano){
+    if (pixy.ccc.numBlocks) {
+      for (int i=0; i < pixy.ccc.numBlocks; i++) {
+        if (pixy.ccc.blocks[i].m_height > tamano) {
           mayor = i;
           tamano = pixy.ccc.blocks[i].m_height;
         }
@@ -564,30 +554,28 @@ void loop() {
   break;
 
   case e::DecidiendoGiro:
-    if (LecturaGiro) {
-      pixy.line.getMainFeatures(LINE_VECTOR);
-      delay(100);
+    pixy.line.getMainFeatures(LINE_VECTOR);
+    delay(100);
 
-      pixy.line.numVectors;
-      
-      if (pixy.line.numVectors) {
-        uint8_t x0 = pixy.line.vectors[0].m_x0;
-        uint8_t y0 = pixy.line.vectors[0].m_y0;
-        uint8_t x1 = pixy.line.vectors[0].m_x1;
-        uint8_t y1 = pixy.line.vectors[0].m_y1;
-        uint16_t m = (y1 - y0) * (x1 - x0);
-        if (m < 0) {
-          sentidoGiro = false;
-          Serial.println("Sentido false");
-        } else if (m > 0) {
-          sentidoGiro = true;
-          Serial.println("Sentido true");
-        }
-        LecturaGiro = false;
-        pixy.changeProg("block");
-        setVelocidad(20);
-        estado = e::Recto;
+    pixy.line.numVectors;
+    
+    if (pixy.line.numVectors) {
+      uint8_t x0 = pixy.line.vectors[0].m_x0;
+      uint8_t y0 = pixy.line.vectors[0].m_y0;
+      uint8_t x1 = pixy.line.vectors[0].m_x1;
+      uint8_t y1 = pixy.line.vectors[0].m_y1;
+      int m = (y1 - y0) * (x1 - x0);
+      if (m < 0) {
+        sentidoGiro = false;
+        Serial.println("Sentido false");
+      } else if (m > 0) {
+        sentidoGiro = true;
+        Serial.println("Sentido true");
       }
+      LecturaGiro = false;
+      pixy.changeProg("block");
+      setVelocidad(20);
+      estado = e::Recto;
     }
   break;
 
