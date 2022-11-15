@@ -12,7 +12,7 @@
 #define GreenSignature 1
 #define RedSignature 2
 
-#define TramosTotales 11 // VueltasTotales * 4 - 1
+#define girosTotales 12
 
 #define EncodersPorCM 14
 
@@ -67,20 +67,79 @@ double posicionX = 0;   // 0 en el centro  | + izquierda | - derecha
 double posicionY = 0;   // 0 pared trasera | + forward   | - backwards
 bool corregirX = false; // Al inicio no se corrige
 
+// Estados
+
+enum e{
+  // First lap
+  Inicio,
+  Recto,
+  DecidiendoGiro,
+  Final,
+  // Paths
+  Straight,
+  Curve1,
+  Curve2
+};
+
+byte estado;
+
 // Map Saving
 
-int Map[][2][3];
+int Map[4][2][3];
 byte BlockNumber[4] = {0, 0, 0, 0};
 long blockDistance = 0;
 int8_t tramo = -1;
 bool MapScaned = false;
 
-byte nextBlock(byte tramo) {
-  if (!BlockNumber[tramo]) {
+byte nextBlock(byte _tramo) {
+  if (!BlockNumber[_tramo]) {
     return 0;
   } else {
     return 1;
   }
+}
+
+int firstBlock[3];
+
+void saveFirstBlock(int8_t _bloque) {
+  if (pixy.ccc.blocks[_bloque].m_signature == RedSignature) {
+    firstBlock[2] = RedSignature;
+  } else if(pixy.ccc.blocks[_bloque].m_signature == GreenSignature) {
+    firstBlock[2] = GreenSignature;
+  }
+  if (pixy.ccc.blocks[_bloque].m_x > cameraWidth / 2) {        // Si el bloque está a la derecha
+    firstBlock[1] = 1;
+  } else {                                                // Si está a la izquierda
+    firstBlock[1] = 0;
+  }
+  firstBlock[0] = blockDistance;
+  Serial.print(firstBlock[0]);
+  Serial.print(firstBlock[1]);
+  Serial.print(firstBlock[2]);
+}
+
+void swapFirstBlock() {
+  for (byte i = 0; i < 3; i++) {
+    Map[3][nextBlock(3)][i] = firstBlock[i];
+  }
+}
+
+void saveBlock(int8_t _bloque, int8_t _tramo) {
+  if (pixy.ccc.blocks[_bloque].m_signature == RedSignature) {
+    Map[_tramo][nextBlock(_tramo)][2] = RedSignature;
+  } else if(pixy.ccc.blocks[_bloque].m_signature == GreenSignature) {
+    Map[_tramo][nextBlock(_tramo)][2] = GreenSignature;
+  }
+  if (pixy.ccc.blocks[_bloque].m_x > cameraWidth/2) {        // Si el bloque está a la derecha
+    Map[_tramo][nextBlock(_tramo)][1] = 1;
+  } else {                                                // Si está a la izquierda
+    Map[_tramo][nextBlock(_tramo)][1] = 0;
+  }
+  Map[_tramo][nextBlock(_tramo)][0] = blockDistance;
+  Serial.print(Map[_tramo][nextBlock(_tramo)][0]);
+  Serial.print(Map[_tramo][nextBlock(_tramo)][1]);
+  Serial.print(Map[_tramo][nextBlock(_tramo)][2]);
+  BlockNumber[tramo] ++;
 }
 
 // Map loading
@@ -104,21 +163,6 @@ void routeDecision() {
     }
   }
 }
-
-enum e{
-  // First lap
-  Inicio,
-  Recto,
-  DecidiendoGiro,
-  Final,
-  // Paths
-  Straight,
-  Curve1,
-  Curve2
-};
-
-byte estado;
-
 
 /*void Calibrar(){ // función para calibrar ( revisar )
   mpu.verbose(true);  
@@ -574,9 +618,9 @@ void loop() {
     prev_ms_ultrasonidos = millis() + 20;
     medirUltrasonidos();
     medirLaseres();
-    checkGiro();
     if (!LecturaGiro) {
       pixy.ccc.getBlocks();
+      checkGiro();
     }
   }
 
@@ -594,7 +638,7 @@ void loop() {
     autoMoverCamara();
   }
 
-  int mayor = -1;
+  int8_t mayor = -1;
   int tamano = 0;
   
  switch (estado)
@@ -607,7 +651,13 @@ void loop() {
     break;
 
   case e::Recto:
-    if (giros == 4) {
+    if ((giros == 4) && (posicionY >= 140 * EncodersPorCM)) {
+      if (firstBlock[2] == RedSignature) {
+        posicionObjetivo = -25 * EncodersPorCM;
+      } else if (firstBlock[2] == GreenSignature) {
+        posicionObjetivo = 25 * EncodersPorCM;
+      }
+      swapFirstBlock();
       MapScaned = true;
     }
     if (pixy.ccc.numBlocks) {
@@ -620,22 +670,15 @@ void loop() {
     }
     if (tamano > tamanoMinimodeEsquive) {
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        Map[tramo][nextBlock(tramo)][2] = RedSignature;
         posicionObjetivo = -25 * EncodersPorCM;
-      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
-        Map[tramo][nextBlock(tramo)][2] = GreenSignature;
+      } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
         posicionObjetivo = 25 * EncodersPorCM;
       }
-      if (pixy.ccc.blocks[mayor].m_x > cameraWidth/2){        // Si el bloque está a la derecha
-        Map[tramo][nextBlock(tramo)][1] = 1;
-      } else {                                                // Si está a la izquierda
-        Map[tramo][nextBlock(tramo)][1] = 0;
+      if (tramo == -1) {
+        saveFirstBlock(mayor);
+      } else {
+        saveBlock(mayor, tramo);
       }
-      Map[tramo][nextBlock(tramo)][0] = blockDistance;
-      Serial.print(Map[tramo][nextBlock(tramo)][0]);
-      Serial.print(Map[tramo][nextBlock(tramo)][1]);
-      Serial.print(Map[tramo][nextBlock(tramo)][2]);
-      BlockNumber[tramo] ++;
     }
   break;
 
@@ -671,7 +714,7 @@ void loop() {
   break;
 
   case e::Straight:
-    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
+    if ((abs(giros) == girosTotales) && (posicionY >= 120 * EncodersPorCM)) {
       estado = e::Final;
     } else {
       if (tramoDerecha[tramo]) {
@@ -683,7 +726,7 @@ void loop() {
   break;
 
   case e::Curve1:
-    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
+    if ((abs(giros) == girosTotales) && (posicionY >= 120 * EncodersPorCM)) {
       estado = e::Final;
     } else {
       if (tramoDerecha[tramo]) {
