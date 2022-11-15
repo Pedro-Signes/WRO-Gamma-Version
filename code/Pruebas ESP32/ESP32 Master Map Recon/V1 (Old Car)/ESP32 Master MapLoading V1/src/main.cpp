@@ -272,11 +272,7 @@ void setup() {
   }
 
   digitalWrite(LED_BUILTIN,HIGH);
-
   
-
-  
-
   while (digitalRead(PIN_BOTON));
   setEnable(1);
   delay(1000);

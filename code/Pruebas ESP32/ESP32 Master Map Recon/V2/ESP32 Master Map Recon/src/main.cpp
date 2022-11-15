@@ -7,9 +7,12 @@
 #include <Pixy2.h>
 #include <ESP32Servo.h>
 
+#define cameraWidth 78
 #define tamanoMinimodeEsquive 45  //55
 #define GreenSignature 1
 #define RedSignature 2
+
+#define TramosTotales 11 // VueltasTotales * 4 - 1
 
 #define EncodersPorCM 14
 
@@ -64,11 +67,54 @@ double posicionX = 0;   // 0 en el centro  | + izquierda | - derecha
 double posicionY = 0;   // 0 pared trasera | + forward   | - backwards
 bool corregirX = false; // Al inicio no se corrige
 
+// Map Saving
+
+int Map[][2][3];
+byte BlockNumber[4] = {0, 0, 0, 0};
+long blockDistance = 0;
+int8_t tramo = -1;
+bool MapScaned = false;
+
+byte nextBlock(byte tramo) {
+  if (!BlockNumber[tramo]) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+// Map loading
+byte Route[4];
+bool tramoDerecha[4];     // Si hay que hacer el tramo por la derecha (true) o por la izquierda (false)
+
+void routeDecision() {
+  for (byte _tramo = 0; _tramo < 4; _tramo++){
+    if (Map[_tramo][0][2] == RedSignature) {                          // Si el bloque es rojo
+      Route[_tramo] = e::Straight;
+      tramoDerecha[_tramo] = true;
+      if (Map[_tramo][1][2] = GreenSignature) {
+        Route[_tramo] = e::Curve1;
+      }
+    } else if (Map[_tramo][0][2] == GreenSignature) {                        // Si el bloque es verde
+      Route[_tramo] = e::Straight;
+      tramoDerecha[_tramo] = false;
+      if (Map[_tramo][1][2] = RedSignature) {
+        Route[_tramo] = e::Curve1;
+      }
+    }
+  }
+}
+
 enum e{
+  // First lap
   Inicio,
   Recto,
   DecidiendoGiro,
-  Final
+  Final,
+  // Paths
+  Straight,
+  Curve1,
+  Curve2
 };
 
 byte estado;
@@ -304,28 +350,35 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
       posicionY = -_posX + 50 * EncodersPorCM;
     }
     posicionObjetivo = -10;
+    if (MapScaned) {
+      estado = Route[tramo % 4];
+      }
   }
 }
 
 void checkGiro() {
   if (sentidoGiro) {
     if ((posicionY >= 170 * EncodersPorCM) && (posicionX >= 0)) {
-      resetPosicion(false);
       giros ++;
+      tramo ++;
+      resetPosicion(false);
       corregirX = true;
     } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX <= 0)) {
-      resetPosicion(false);
       giros ++;
+      tramo ++;
+      resetPosicion(false);
       corregirX = true;
     }
   } else {
     if ((posicionY >= 170 * EncodersPorCM) && (posicionX <= 0)) {
-      resetPosicion(false);
       giros --;
+      tramo ++;
+      resetPosicion(false);
       corregirX = true;
     } else if ((posicionY >= 195 * EncodersPorCM) && (posicionX >= 0)) {
-      resetPosicion(false);
       giros --;
+      tramo ++;
+      resetPosicion(false);
       corregirX = true;
     }
   }
@@ -554,8 +607,8 @@ void loop() {
     break;
 
   case e::Recto:
-    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
-      estado = e::Final;
+    if (giros == 4) {
+      MapScaned = true;
     }
     if (pixy.ccc.numBlocks) {
       for (int i=0; i < pixy.ccc.numBlocks; i++) {
@@ -567,10 +620,22 @@ void loop() {
     }
     if (tamano > tamanoMinimodeEsquive) {
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
+        Map[tramo][nextBlock(tramo)][2] = RedSignature;
         posicionObjetivo = -25 * EncodersPorCM;
-      } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
+      } else if(pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
+        Map[tramo][nextBlock(tramo)][2] = GreenSignature;
         posicionObjetivo = 25 * EncodersPorCM;
       }
+      if (pixy.ccc.blocks[mayor].m_x > cameraWidth/2){        // Si el bloque está a la derecha
+        Map[tramo][nextBlock(tramo)][1] = 1;
+      } else {                                                // Si está a la izquierda
+        Map[tramo][nextBlock(tramo)][1] = 0;
+      }
+      Map[tramo][nextBlock(tramo)][0] = blockDistance;
+      Serial.print(Map[tramo][nextBlock(tramo)][0]);
+      Serial.print(Map[tramo][nextBlock(tramo)][1]);
+      Serial.print(Map[tramo][nextBlock(tramo)][2]);
+      BlockNumber[tramo] ++;
     }
   break;
 
@@ -603,6 +668,41 @@ void loop() {
   case e::Final:
     setVelocidad(0);
     setEnable(0);
+  break;
+
+  case e::Straight:
+    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
+      estado = e::Final;
+    } else {
+      if (tramoDerecha[tramo]) {
+        posicionObjetivo = -25 * EncodersPorCM;
+      } else {
+        posicionObjetivo = 25 * EncodersPorCM;
+      }
+    }
+  break;
+
+  case e::Curve1:
+    if ((abs(giros) == 12) && (posicionY >= 120 * EncodersPorCM)) {
+      estado = e::Final;
+    } else {
+      if (tramoDerecha[tramo]) {
+        posicionObjetivo = -25 * EncodersPorCM;
+      } else {
+        posicionObjetivo = 25 * EncodersPorCM;
+      }
+      estado = e::Curve2;
+    }
+  break;
+
+  case e::Curve2:
+    if (posicionY >= 130) {
+      if (tramoDerecha[tramo]) {
+        posicionObjetivo = 25 * EncodersPorCM;
+      } else {
+        posicionObjetivo = -25 * EncodersPorCM;
+      }
+    }
   break;
 
  }
