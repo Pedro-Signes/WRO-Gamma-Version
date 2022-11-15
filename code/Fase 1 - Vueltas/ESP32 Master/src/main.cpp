@@ -32,18 +32,17 @@ int ErrorDireccionActual = 0;
 int direccionObjetivo = 0;
 
 bool GiroRealizado = true;
-bool PrimeraParada = true;
-bool SegundaParada = true;
 
 uint32_t Duracion_de_la_muestra = 0;
 MPU9250 mpu;
 
-long solicitudEncoder();
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
 byte ultraIzquierdo = 1;
 byte ultraDerecho = 2;
 byte ultraTrasero = 3;
+
+byte medidasLaseres[3];
 
 long medidaencoder = 0;
 long prev_medidaencoder = 0;
@@ -143,7 +142,17 @@ void medirUltrasonidos(){
   }
 }
 
-
+void medirLaseres() {
+  Wire.beginTransmission(5);
+  Wire.write(1);
+  Wire.endTransmission();
+  Wire.requestFrom(5,3);
+  byte iteracion = 0;
+  while (Wire.available()) {
+    medidasLaseres[iteracion] = Wire.read();
+    iteracion ++;
+  }
+}
 
 /*
 void posicionamiento() {
