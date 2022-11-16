@@ -1,0 +1,2 @@
+This folder may be neglected since it only contains a record of the telemetry data of some tests we have done.
+The Wifi_reader file is an old python program to receive the data the ESP32 sent via Wifi.
