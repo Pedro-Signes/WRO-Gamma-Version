@@ -38,8 +38,8 @@ MPU9250 mpu;
 
 byte medidasUltrasonidos[4];
 byte ultraFrontal = 0;
-byte ultraIzquierdo = 1;
-byte ultraDerecho = 2;
+byte ultraIzquierdo = 2;
+byte ultraDerecho = 1;
 byte ultraTrasero = 3;
 
 byte medidasLaseres[3];
@@ -343,7 +343,7 @@ void loop() {
     setVelocidad(1);
    estado = e::Final;
   } else {
-    setVelocidad(30);
+    setVelocidad(70);
     if ((medidaencoder - MarcaEncoder) > offsetEncoder) { //10cm con 120 pasos de encoder
       estado = e::DecidiendoGiro;
   }
@@ -351,7 +351,7 @@ void loop() {
   break;
 
  case e::RectoLento:
-  setVelocidad(30);
+  setVelocidad(55);
   if(medidasUltrasonidos[ultraFrontal] <= 100){
         estado = e::DecidiendoGiro;
       }
@@ -383,7 +383,7 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(30);
+  setVelocidad(40);
   if ((medidasUltrasonidos[ultraIzquierdo] >= 110 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     if (medidasUltrasonidos[ultraDerecho] <= 40){
