@@ -19,6 +19,9 @@
 #define NUMPIXELS 8
 #define DELAYVAL 50
 
+#define SETUP true
+#define LOOP false
+
 volatile long encoder = 0;
 volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
@@ -72,10 +75,10 @@ void telemetria() {
 
 void colors(byte mainPixel, byte currentPixel, int sense) {
   if (mainPixel == currentPixel) {
-    pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
+    pixels.setPixelColor(currentPixel, pixels.Color(15,0,0));
   } 
   else if (((currentPixel - mainPixel) * sense) == -1) {
-    pixels.setPixelColor(currentPixel, pixels.Color(12,0,0));
+    pixels.setPixelColor(currentPixel, pixels.Color(8,0,0));
   } 
   else if (((currentPixel - mainPixel) * sense) == -2) {
     pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
@@ -83,6 +86,52 @@ void colors(byte mainPixel, byte currentPixel, int sense) {
   else {
     pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
   }
+}
+
+void colorRotation(bool function) {
+  if (function){
+    byte mainpixel = 0;
+    int sense = 1;
+    while (!ESP_prepared) {
+      for (int i = 0; i < NUMPIXELS; i++) {
+        colors(mainpixel, i, sense);
+        if (ESP_prepared) {
+          break;
+        }
+      }
+      pixels.show();
+      delay(120);
+      if (mainpixel == NUMPIXELS - 1) {
+        sense = -1;
+      } else if (mainpixel == 0) {
+        sense = 1;
+      }
+      mainpixel = mainpixel + sense;
+    }
+  } else {
+    if (!ESP_prepared) {
+    static byte mainpixel = 0;
+    static int sense = 1;
+    for (int i = 0; i < NUMPIXELS; i++) {
+      colors(mainpixel,i,sense);
+    }
+    pixels.show();
+    delay(120);
+    if (mainpixel == NUMPIXELS - 1) {
+    sense = -1;
+    } else if (mainpixel == 0) {
+      sense = 1;
+    }
+    mainpixel = mainpixel + sense;
+    }
+  }
+}
+
+void setWhite() {
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(15, 15, 15));
+  }
+  pixels.show();
 }
 
 Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,9000UL);          //Delantero
@@ -130,29 +179,9 @@ void setup() {
   }
   */
 
-  byte mainpixel = 0;
-  int sense = 1;
-  while (!ESP_prepared) {
-    for (int i=0; i<NUMPIXELS; i++) {
-      colors(mainpixel,i,sense);
-      if (ESP_prepared) {
-        break;
-      }
-    }
-    pixels.show();
-    delay(120);
-    if (mainpixel == NUMPIXELS - 1) {
-      sense = -1;
-    } else if (mainpixel == 0) {
-      sense = 1;
-    }
-    mainpixel = mainpixel + sense;
-  }
+  colorRotation(SETUP);
 
-  for(int i=0; i<NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(100, 100, 100));
-  }
-  pixels.show();
+  setWhite();
 
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
@@ -182,21 +211,7 @@ void loop() {
     prev_ms_speed = millis() + 15;
   }
 
-  if (!ESP_prepared) {
-    static byte mainpixel = 0;
-    static int sense = 1;
-    for(int i=0; i<NUMPIXELS; i++) {
-      colors(mainpixel,i,sense);
-    }
-    pixels.show();
-    delay(120);
-    if (mainpixel == NUMPIXELS - 1) {
-    sense = -1;
-    } else if (mainpixel == 0) {
-      sense = 1;
-    }
-    mainpixel = mainpixel + sense;
-  }
+  colorRotation(LOOP);
 }
 
 
