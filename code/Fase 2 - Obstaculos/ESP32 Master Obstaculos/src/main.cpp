@@ -195,7 +195,7 @@ void enviarMensaje(String texto){
  Serial.println(texto);
 }
 
-void posicionTelemetria() {
+/*void posicionTelemetria() {
   Serial.print("\t");
   Serial.print(posicionObjetivo);
   Serial.print(",");
@@ -271,7 +271,7 @@ void EnviarTelemetria()
   Serial.print(posicionY);
   Serial.print("\t");
   Serial.println(ErrorDireccionActual);
-}
+}*/
 
 // Obtencion de la posicion
 
@@ -283,7 +283,7 @@ void posicionInicial() {
     posicionY = 160 * EncodersPorCM;
   }
   //posicionY = 100 * EncodersPorCM; //aaaaaatenccccciiiiooon, borar cuando el sensor funcione
-  EnviarTelemetria();
+  //EnviarTelemetria();
 }
 
 void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con operaciones
@@ -388,12 +388,21 @@ void autoMoverCamara() {
     posicionBloqueY = 90 * EncodersPorCM;
   } else if (posicionY <= 125 * EncodersPorCM) {
     posicionBloqueY = 140 * EncodersPorCM;
-  } else if (posicionY <= 175 * EncodersPorCM) {
+  } else if (posicionY <= 150 * EncodersPorCM) {
     posicionBloqueY = 190 * EncodersPorCM;
   }
-  _ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
-  int _offsetLapAngle = 90 * giros;
-  moverCamara(_ang - valorBrujula + _offsetLapAngle);
+  if (posicionBloqueY) {
+    _ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
+    int _offsetLapAngle = 90 * giros;
+    moverCamara(_ang - valorBrujula + _offsetLapAngle);
+  } else {
+    if (sentidoGiro) {
+      moverCamara(45);
+    } else {
+      moverCamara(-45);
+    }
+  }
+  
 }
 
 // Comienzo del programa
@@ -533,6 +542,7 @@ void loop() {
     medirUltrasonidos();
     medirLaseres();
     if (!LecturaGiro) {
+      corregirPosicion();
       checkGiro();
       pixy.ccc.getBlocks();
     }
@@ -542,7 +552,7 @@ void loop() {
   if (millis() > prev_ms_telemetria) {
     //EnviarTelemetria();
     //distanceTelemetria();
-    posicionTelemetria();
+    //posicionTelemetria();
     prev_ms_telemetria = millis() + 30;
   }
 

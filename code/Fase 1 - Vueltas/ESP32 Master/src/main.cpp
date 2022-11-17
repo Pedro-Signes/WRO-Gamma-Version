@@ -161,7 +161,7 @@ void posicionamiento() {
   direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
 */
-
+/*
 void EnviarServoTelemetria()
 {
   Serial.print(estado);
@@ -220,7 +220,7 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print("\t");
   Serial.println(posicionY);
-}
+}*/
 
 void setup() {
 
@@ -274,7 +274,7 @@ void setup() {
 
   while (digitalRead(PIN_BOTON)){
     medirUltrasonidos();
-    EnviarTelemetria();
+    //EnviarTelemetria();
     delay(100);
   };
 
@@ -324,7 +324,7 @@ void loop() {
     prev_ms_encoder = millis() + 20;
     prev_medidaencoder = medidaencoder;
     medidaencoder = medirEncoder();
-    EnviarTelemetria();
+    //EnviarTelemetria();
   }
 
  switch (estado)
@@ -424,7 +424,7 @@ void loop() {
   break;
 
  case e::Final:
-  if((medidaencoder - MarcaEncoder) > 5){
+  if((medidaencoder - MarcaEncoder) > 15){
     setVelocidad(0);
     setEnable(0);
   }
