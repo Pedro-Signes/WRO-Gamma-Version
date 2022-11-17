@@ -53,7 +53,7 @@ Then it is worth highlighting the Pixy 2.0, an intelligent Pixy 2.0 camera, whic
 
 Finally, it is worth mentioning the four ultrasounds that the robot poses, since these indicate the distance that it has in front, to the sides, and behind. This sensors are connected to the Arduino Nano but the data will reach the ESP32 through the system explained previously, and with it the ESP32 will make different decisions. Recently we have noticed that the ultrasonic sensors would not obtain enough accurate measures of the distance and this affects our program beacause we cannot have an accurate check of the position of the car. Therefore we decided to add new sensors, the TOF sensors or unofficialy laser sensors. These ones are connected to the Arduino Nano Every because as explained before, all the pins in this microcontroller have interruptions which allow us to measure better with this sensors.
 
-This is all our car which we have developed with hard work and effort, but learning a lot.
+This is all our car, which we have developed with hard work and effort, but learning a lot.
 
   
 ![FotoEquipo](https://user-images.githubusercontent.com/100376253/175772085-2c6c82bf-9e69-456e-927b-e3cf1254dc0f.jpeg)
