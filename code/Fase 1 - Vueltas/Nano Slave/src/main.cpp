@@ -16,7 +16,7 @@
 #define PinLed 12
 #define PinEnable 14
 
-#define NUMPIXELS 8
+#define NUMPIXELS 9
 #define DELAYVAL 50
 
 #define SETUP true
@@ -81,6 +81,9 @@ void colors(byte mainPixel, byte currentPixel, int sense) {
     pixels.setPixelColor(currentPixel, pixels.Color(8,0,0));
   } 
   else if (((currentPixel - mainPixel) * sense) == -2) {
+    pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -3) {
     pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
   } 
   else {
@@ -151,7 +154,7 @@ void setup() {
   Serial.println("Serial a punto");
 
   pinMode(PinEnable,OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);  //********************************************************************************
   pinMode(PinEncoder, INPUT);
 
   MiCServo.Setup();
@@ -234,7 +237,11 @@ void receiveEvent(int howMany) {
 
     } else if(requestedData == 5) {
       int valor_enable = Wire.read();
-      digitalWrite(PinEnable, valor_enable);
+      if(valor_enable == 1){
+        digitalWrite(PinEnable, HIGH);
+        attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+      }
+      //digitalWrite(PinEnable, valor_enable);  //***********************************************************************Esto es lo de antes
       ESP_prepared = valor_enable;
     }
   }

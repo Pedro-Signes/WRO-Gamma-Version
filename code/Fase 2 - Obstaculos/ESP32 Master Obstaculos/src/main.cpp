@@ -7,14 +7,15 @@
 #include <Pixy2.h>
 #include <ESP32Servo.h>
 
-#define tamanoMinimodeEsquive 45  //55
+#define tamanoMinimodeEsquive 35  //55
 #define GreenSignature 1
 #define RedSignature 2
+byte camaraIzquierda = 0;
 
 #define EncodersPorCM 14
 
 #define PIN_BOTON 13
-
+#define PIN_BOCINA 14 //Altavoz para depuracion ********************************************************************************
 #define OffsetMuroInterior 5
 #define OffsetMuroExterior 5
 
@@ -34,6 +35,7 @@ float valorBrujula = 0;   // + anti-clockwise | - clockwise
 float offset;
 int giros = 0;
 bool sentidoGiro = true;      // True -> Izquierda   |   False -> Derecha
+int sentidoParaCorregirPosicion = 1;   //1 si izquierda | -1 si derecha
 bool LecturaGiro = true;
 
 int ErrorDireccionAnterior = 0;
@@ -194,8 +196,8 @@ void enviarMensaje(int numero){
 void enviarMensaje(String texto){
  Serial.println(texto);
 }
-
-/*void posicionTelemetria() {
+/*
+void posicionTelemetria() {
   Serial.print("\t");
   Serial.print(posicionObjetivo);
   Serial.print(",");
@@ -207,8 +209,8 @@ void enviarMensaje(String texto){
   Serial.print(",");
   Serial.print("\t");
   Serial.println(posicionY);
-}
-
+}*/
+/*
 void distanceTelemetria() {
 Serial.print("\t");
 Serial.print(medidasUltrasonidos[ultraFrontal]);
@@ -287,7 +289,7 @@ void posicionInicial() {
 }
 
 void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Corregir False -> Con operaciones
-  if (corregir) {
+  if (corregir) {   //No se usa esta parte, siempre el else hasta una posible mejora en la version 2.1
     if (sentidoGiro) {
       posicionX = (50 - medidasUltrasonidos[ultraDerecho]) * EncodersPorCM;
     } else {
@@ -309,7 +311,7 @@ void resetPosicion(bool corregir) { // Corregir True -> Con ultrasonidos      Co
 
 void checkGiro() {
   if (sentidoGiro) {
-    if ((posicionY >= 170 * EncodersPorCM) && (posicionX >= 0)) {
+    if ((posicionY >= 160 * EncodersPorCM) && (posicionX >= 0)) {
       resetPosicion(false);
       giros ++;
       corregirX = true;
@@ -331,32 +333,22 @@ void checkGiro() {
   }
 }
 
-/*
-void corregirPosicion() {
-  if ((posicionY >= 125 * EncodersPorCM) && corregirX) {  // Para corregir posicion X en mitad de la recta
-    if (sentidoGiro) {
-      if (posicionX > 0) {
-        posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
-      } else {
-        posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
-      }
-    } else {
-      if (posicionX < 0) {
-        posicionX = 53 * EncodersPorCM - medidasLaseres[ultraIzquierdo] * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
-      } else {
-        posicionX = medidasLaseres[ultraDerecho] * EncodersPorCM - 53 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM;
-      }
-    }
-    corregirX = false;
-  }
-}*/
-
 void corregirPosicion() {
   if (posicionY <= 100) {
-    if ((posicionX <= 0) && (sentidoGiro)) {
-      posicionX = medidasLaseres[ultraFrontal] * EncodersPorCM - 50 * EncodersPorCM + 20 * EncodersPorCM;
-    } else if ((posicionX >= 0) && (!sentidoGiro)) {
-      posicionX = 50 * EncodersPorCM - medidasLaseres[ultraFrontal] * EncodersPorCM - 20 * EncodersPorCM;
+    if (abs(abs(valorBrujula) - 90 * (abs(giros)-1)) <= 10) {   //Parece que funciona, soy Pedro
+  //if (abs(valorBrujula - 90 * sentidoParaCorregirPosicion * (giros-1) <= 10) { //************************************************************************1->10
+      digitalWrite(PIN_BOCINA,HIGH);
+      if ((posicionX <= 140) && (sentidoGiro)) {
+        posicionX = (medidasLaseres[ultraFrontal] - 50 - OffsetMuroExterior + 20) * EncodersPorCM;  //20 porque cuando corrige hay que restar la distancia entre el sensor y el centro del eje trasero
+        //posicionX = medidasLaseres[ultraFrontal] * EncodersPorCM - 50 * EncodersPorCM - OffsetMuroExterior * EncodersPorCM + 20 * EncodersPorCM;
+        //posicionY = medidasLaseres[ultraDerecho] * EncodersPorCM + 3 * EncodersPorCM;
+      } else if ((posicionX >= -140) && (!sentidoGiro)) {
+        posicionX = (50 + OffsetMuroExterior - medidasLaseres[ultraFrontal] - 20) * EncodersPorCM;
+        //posicionX = 50 * EncodersPorCM + OffsetMuroExterior * EncodersPorCM - medidasLaseres[ultraFrontal] * EncodersPorCM - 20 * EncodersPorCM;
+        //posicionY = medidasLaseres[ultraIzquierdo] * EncodersPorCM + 3 * EncodersPorCM;
+      }
+    }else{
+      digitalWrite(PIN_BOCINA,LOW);
     }
   }
 }
@@ -375,12 +367,12 @@ void posicionamiento() {
 
 // angulo € [-90, 90]
 void moverCamara(int angulo) {  // 0 == 85 | min == 0 | max == 170
-  byte _ang = map(angulo + 90, 0, 180, 0, 170);
+  int _ang = map(angulo*1.2 + 90, 0, 180, 0, 170);  //********************************************************Aumentar o siminuir
   servo.write(constrain(_ang, 0, 170));
 }
 
 // Mover el automaticamente el servo de la camara
-void autoMoverCamara() {
+void autoMoverCamara(double _posXblock) {
   double posicionBloqueX = 0;
   double posicionBloqueY = 0;
   int _ang;
@@ -391,6 +383,9 @@ void autoMoverCamara() {
   } else if (posicionY <= 150 * EncodersPorCM) {
     posicionBloqueY = 190 * EncodersPorCM;
   }
+  //_ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
+  //int _offsetLapAngle = 90 * giros;
+  //moverCamara(_ang - valorBrujula + _offsetLapAngle);
   if (posicionBloqueY) {
     _ang = 180 / M_PI * atan2(posicionBloqueX - posicionX, posicionBloqueY - posicionY);
     int _offsetLapAngle = 90 * giros;
@@ -424,7 +419,7 @@ void setup() {
 
   pinMode(PIN_BOTON ,INPUT_PULLUP);
   pinMode(LED_BUILTIN,OUTPUT);
-  pinMode(LED_BUILTIN,OUTPUT);
+  pinMode(PIN_BOCINA,OUTPUT);
 
   Wire.begin();
   uint32_t freq = 400000;
@@ -482,18 +477,20 @@ void setup() {
   digitalWrite(LED_BUILTIN,HIGH);
 
   while (digitalRead(PIN_BOTON)) {
-    medirUltrasonidos();
+    /*medirUltrasonidos();
     medirLaseres();
     //distanceTelemetria();
     //EnviarTelemetria();
-    delay(100);
+    delay(100);*/
   }
 
-  setEnable(1);
+  //setEnable(1);
   delay(1000);
+  setEnable(1);  //*************************************************************************************
 
   setVelocidad(15);
-  delay(500);
+  //setVelocidad(12);
+  //delay(500);     //*******************************************************************
 }
 
 void loop() {
@@ -553,14 +550,29 @@ void loop() {
     //EnviarTelemetria();
     //distanceTelemetria();
     //posicionTelemetria();
+    //Serial.println(medidasLaseres[ultraFrontal]);
     prev_ms_telemetria = millis() + 30;
   }
 
   static uint32_t prev_ms_camara = millis();
   if (millis() > prev_ms_camara) {
     prev_ms_camara = millis() + 50;
-    autoMoverCamara();
+    if (!LecturaGiro) {
+      autoMoverCamara(0);}
+    /*if (!LecturaGiro) {
+      if (camaraIzquierda == 0) {
+        autoMoverCamara(5*14);
+      } else if (camaraIzquierda == 4) {
+        autoMoverCamara(-5*14);
+      }
+      camaraIzquierda++;
+      if (camaraIzquierda == 8) {
+        camaraIzquierda = 0;
+      }
+    }*/
   }
+
+  
 
   int mayor = -1;
   int tamano = 0;
@@ -568,7 +580,7 @@ void loop() {
  switch (estado)
   {
   case e::Inicio:
-    if (posicionY > 140 * EncodersPorCM) { 
+    if (posicionY > 135 * EncodersPorCM) { 
       setVelocidad(0);
       estado = e::DecidiendoGiro;
     }
@@ -588,10 +600,25 @@ void loop() {
     }
     if (tamano > tamanoMinimodeEsquive) {
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        posicionObjetivo = -25 * EncodersPorCM;
+        if (posicionY <= 90*EncodersPorCM) {
+          if (sentidoGiro) {
+            posicionObjetivo = -25 * EncodersPorCM + 5 * EncodersPorCM;
+          } else {
+            posicionObjetivo = -25 * EncodersPorCM - 5 * EncodersPorCM;
+          }
+        } else {
+          posicionObjetivo = -25 * EncodersPorCM;
+        }
       } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
-        posicionObjetivo = 25 * EncodersPorCM;
-      }
+        if (posicionY <= 90*EncodersPorCM) {
+          if (sentidoGiro) {
+            posicionObjetivo = 25 * EncodersPorCM + 5 * EncodersPorCM;
+          } else {
+            posicionObjetivo = 25 * EncodersPorCM - 5 * EncodersPorCM;
+          }
+        } else {
+          posicionObjetivo = 25 * EncodersPorCM;
+        }      }
     }
   break;
 
@@ -609,14 +636,18 @@ void loop() {
       long m = (y1 - y0) * (x1 - x0);
       if (m > 0) {
         sentidoGiro = false;
-        Serial.println("Sentido false");
+        sentidoParaCorregirPosicion = -1;
+        //Serial.println("Sentido false");
       } else if (m < 0) {
         sentidoGiro = true;
-        Serial.println("Sentido true");
+        sentidoParaCorregirPosicion = 1;
+        //Serial.println("Sentido true");
       }
       LecturaGiro = false;
       pixy.changeProg("block");
-      setVelocidad(20);
+      //setVelocidad(20);
+      //setVelocidad(12);
+      setVelocidad(17);  //**********************************************************************************
       estado = e::Recto;
     }
   break;

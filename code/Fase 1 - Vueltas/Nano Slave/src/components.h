@@ -99,7 +99,7 @@ void Motor::potencia(int pot){
 
 void Motor::corregirVelocidad(int velocidadActual, int velocidadTarget){
   _error = velocidadTarget - velocidadActual;
-  _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, -150, 150);
+  _potencia = constrain( _potencia + _error * kp + (_error - _errorAnterior) * kd, -255, 255);
   _errorAnterior = _error;
   if (velocidadTarget==0){
     potencia(0);

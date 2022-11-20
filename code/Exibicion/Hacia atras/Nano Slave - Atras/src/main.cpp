@@ -5,32 +5,40 @@
 #include <Adafruit_NeoPixel.h>
 
 #define PinEncoder 2
-#define PinTriggerI 3     //Izquierdo
-#define PinEchoI 8        //Izquierdo
-#define PinTriggerD 7     //Derecha
-#define PinEchoD 6        //Derecha
-#define PinTriggerF 11    //Frontal
-#define PinEchoF 4        //Frontal
-#define PinTriggerT 13    //Trasero
-#define PinEchoT 15       //Trasero
+#define PinTriggerI 11     //Izquierdo      11
+#define PinEchoI 4        //Izquierdo       4
+#define PinTriggerD 3     //Derecha        3
+#define PinEchoD 8        //Derecha         8
+#define PinTriggerF 7    //Frontal          12
+#define PinEchoF 6        //Frontal         9
+#define PinTriggerT 13    //Trasero         13
+#define PinEchoT 15       //Trasero         15
 #define PinLed 12
 #define PinEnable 14
 
-#define NUMPIXELS 8
+#define NUMPIXELS 9
 #define DELAYVAL 50
+
+#define SETUP true
+#define LOOP false
 
 volatile long encoder = 0;
 volatile long encoderAbsoluto = 0;
 bool lecturaEncoder = false;
 volatile float velocidad;
 byte datoEncoder[4];
+
 int distanceFrontal;
-int distanceIzquierdo;
 int distanceDerecho;
+int distanceIzquierdo;
 int distanceTrasero;
+int prevdistanceFrontal;
+int prevdistanceDerecho;
+int prevdistanceIzquierdo;
+int prevdistanceTrasero;
+byte UltraMedir = 0;
+
 int velocidadObjetivo = 0;
-int encodertotal = 0;
-uint32_t tiempo = 0;
 
 bool ESP_prepared = false;
 
@@ -38,10 +46,8 @@ void receiveEvent(int howMany);
 void requestEvent();
 uint8_t requestedData = 0;
 
-uint8_t medidaArray[3];
-
 CServo MiCServo(PinConServo);
-Motor MiMotor(PinEnMotor,PinDir1Motor,PinDir2Motor);
+Motor MiMotor(PinEnMotor,PinDir2Motor,PinDir1Motor);
 Adafruit_NeoPixel pixels(NUMPIXELS, PinLed, NEO_GRB + NEO_KHZ800);
 
 void encoderISR() {  // función para que funcien el encoder
@@ -58,25 +64,74 @@ void encoderISR() {  // función para que funcien el encoder
   
 }
 
-void colors(byte mainPixel, byte currentPixel, int sense){
-  if (mainPixel == currentPixel){
-    pixels.setPixelColor(currentPixel, pixels.Color(30,0,0));
-  }
-  else if (((currentPixel - mainPixel) * sense) == -1){
-    pixels.setPixelColor(currentPixel, pixels.Color(12,0,0));
-  }
-  else if (((currentPixel - mainPixel) * sense) == -2){
+void colors(byte mainPixel, byte currentPixel, int sense) {
+  if (mainPixel == currentPixel) {
+    pixels.setPixelColor(currentPixel, pixels.Color(15,0,0));
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -1) {
+    pixels.setPixelColor(currentPixel, pixels.Color(8,0,0));
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -2) {
     pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
-  }
+  } 
+  else if (((currentPixel - mainPixel) * sense) == -3) {
+    pixels.setPixelColor(currentPixel, pixels.Color(4,0,0));
+  } 
   else {
     pixels.setPixelColor(currentPixel, pixels.Color(0,0,0));
   }
 }
 
-Ultrasonic ultrasonicFrontal(PinTriggerF,PinEchoF,10000UL);//Delantero
-Ultrasonic ultrasonicIzquierdo(PinTriggerI,PinEchoI,10000UL);//izquierdo
-Ultrasonic ultrasonicDerecho(PinTriggerD,PinEchoD,10000UL);//derechos
-Ultrasonic ultrasonicTrasero(PinTriggerT,PinEchoT,10000UL);//Trasero
+void colorRotation(bool function) {
+  if (function){
+    byte mainpixel = 0;
+    int sense = 1;
+    while (!ESP_prepared) {
+      for (int i = 0; i < NUMPIXELS; i++) {
+        colors(mainpixel, i, sense);
+        if (ESP_prepared) {
+          break;
+        }
+      }
+      pixels.show();
+      delay(120);
+      if (mainpixel == NUMPIXELS - 1) {
+        sense = -1;
+      } else if (mainpixel == 0) {
+        sense = 1;
+      }
+      mainpixel = mainpixel + sense;
+    }
+  } else {
+    if (!ESP_prepared) {
+    static byte mainpixel = 0;
+    static int sense = 1;
+    for (int i = 0; i < NUMPIXELS; i++) {
+      colors(mainpixel,i,sense);
+    }
+    pixels.show();
+    delay(120);
+    if (mainpixel == NUMPIXELS - 1) {
+    sense = -1;
+    } else if (mainpixel == 0) {
+      sense = 1;
+    }
+    mainpixel = mainpixel + sense;
+    }
+  }
+}
+
+void setWhite() {
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(15, 15, 15));
+  }
+  pixels.show();
+}
+
+Ultrasonic ultrasonicFrontal(PinTriggerT,PinEchoT,9000UL);          //Delantero
+Ultrasonic ultrasonicIzquierdo(PinTriggerD,PinEchoD,9000UL);        //izquierdo
+Ultrasonic ultrasonicDerecho(PinTriggerI,PinEchoI,9000UL);          //derechos
+Ultrasonic ultrasonicTrasero(PinTriggerF,PinEchoF,9000UL);          //Trasero
 
 void LecturaUltrasonidos();
 
@@ -84,11 +139,12 @@ void setup() {
   pixels.begin();
   delay(100);
   pixels.clear();
+  Serial.begin(115200);
+  Serial.println("Serial a punto");
 
   pinMode(PinEnable,OUTPUT);
-  digitalWrite(PinEnable,1);
+  //attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);  //********************************************************************************
   pinMode(PinEncoder, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
 
   MiCServo.Setup();
   MiCServo.MoverServo(0);
@@ -97,32 +153,9 @@ void setup() {
   Wire.onReceive(receiveEvent); // register event
   Wire.onRequest(requestEvent); // register event
 
-  LecturaUltrasonidos();
-  
-  byte mainpixel = 0;
-  int sense = 1;
-  while(!ESP_prepared){
-    for(int i=0; i<NUMPIXELS; i++) {
-      colors(mainpixel,i,sense);
-      if (ESP_prepared){
-        break;
-      }
-    }
-    pixels.show();
-    delay(120);
-    if (mainpixel == NUMPIXELS - 1){
-    sense = -1;}
-    if (mainpixel == 0){
-      sense = 1;
-    }
-    mainpixel = mainpixel + sense;
-  }
+  colorRotation(SETUP);
 
-  for(int i=0; i<NUMPIXELS; i++) {
-
-    pixels.setPixelColor(i, pixels.Color(100, 100, 100));
-  }
-  pixels.show();
+  setWhite();
 
   cli();
   TCCR2A = 0;                 // Reset entire TCCR1A to 0 
@@ -135,100 +168,95 @@ void setup() {
 }
 
 void loop() {
-
-  
   //put your main code here, to run repeatedly:
-  if (millis() > tiempo){
+
+  static uint32_t prev_ms_ultrasonic;
+  if (millis() > prev_ms_ultrasonic) {
     LecturaUltrasonidos();
-    tiempo = millis() + 5;
+    prev_ms_ultrasonic = millis() + 7;
   }
 
-  if (millis() > tiempo){
+  static uint32_t prev_ms_speed;
+  if (millis() > prev_ms_speed) {
     MiMotor.corregirVelocidad(velocidad, velocidadObjetivo);
-    tiempo = millis() + 15;
+    prev_ms_speed = millis() + 15;
   }
 
-  if(!ESP_prepared){
-    static byte mainpixel = 0;
-    static int sense = 1;
-    for(int i=0; i<NUMPIXELS; i++) {
-      colors(mainpixel,i,sense);
-      if (ESP_prepared){
-        break;
-      }
-    }
-    pixels.show();
-    delay(120);
-    if (mainpixel == NUMPIXELS - 1){
-    sense = -1;}
-    if (mainpixel == 0){
-      sense = 1;
-    }
-    mainpixel = mainpixel + sense;
-  }
+  colorRotation(LOOP);
 }
 
 
 void receiveEvent(int howMany) {
-
-  while(howMany > 0 ){
+  while (howMany > 0 ) {
     requestedData = Wire.read();
     howMany--;
-    if (requestedData == 3){
+    if (requestedData == 3) {
       velocidadObjetivo = Wire.read();
-      velocidadObjetivo = velocidadObjetivo*(Wire.read()-1);
-
-    }else if(requestedData == 4){     //RX servo
+      if (!Wire.read()) {
+        velocidadObjetivo = -velocidadObjetivo;
+      }
+    } else if(requestedData == 4) {     //RX servo
       int argumentoDegiro;
       argumentoDegiro = Wire.read();
-      argumentoDegiro = argumentoDegiro*(Wire.read()-1);
+      if (!Wire.read()) {
+        argumentoDegiro = -argumentoDegiro;
+      }
       MiCServo.MoverServo(argumentoDegiro);
 
-    }else if(requestedData == 5){
+    } else if(requestedData == 5) {
       int valor_enable = Wire.read();
-      digitalWrite(PinEnable,valor_enable);
+      if(valor_enable == 1){
+        digitalWrite(PinEnable, HIGH);
+        attachInterrupt(digitalPinToInterrupt(PinEncoder), encoderISR, CHANGE);
+      }
+      //digitalWrite(PinEnable, valor_enable);  //***********************************************************************Esto es lo de antes
       ESP_prepared = valor_enable;
     }
-
   }
 }
 
 void requestEvent() {
-
   if (requestedData == 1) {
     datoEncoder[0]=encoderAbsoluto & 0xff;
     datoEncoder[1]=(encoderAbsoluto>>8) & 0xff;
     datoEncoder[2]=(encoderAbsoluto>>16) & 0xff;
     datoEncoder[3]=(encoderAbsoluto>>24) & 0xff;
-    Wire.write(datoEncoder,4);
+    Wire.write(datoEncoder, 4);
   }
-  else if (requestedData == 2){
+  else if (requestedData == 2) {
     Wire.write(distanceFrontal);
-    Wire.write(distanceIzquierdo);
     Wire.write(distanceDerecho);
+    Wire.write(distanceIzquierdo);
     Wire.write(distanceTrasero);
   }
 
 }
 
-ISR(TIMER2_COMPB_vect){        
-  if (lecturaEncoder==true){                  
+ISR(TIMER2_COMPB_vect) {        
+  if (lecturaEncoder == true) {                  
     velocidad = encoder;
-    encodertotal= encodertotal + encoder;
     encoder = 0;
-    lecturaEncoder= false;
-  }
-  else{
-    lecturaEncoder=true;
+    lecturaEncoder = false;
+  } else {
+    lecturaEncoder = true;
   }
 }
 
-void LecturaUltrasonidos(){
+void LecturaUltrasonidos() {
   if (forward) {
-  distanceFrontal=ultrasonicFrontal.read();
-  distanceIzquierdo=ultrasonicIzquierdo.read();
-  distanceDerecho=ultrasonicDerecho.read();
+    if (UltraMedir == 0) {
+      distanceFrontal = ultrasonicFrontal.read();
+    } else if (UltraMedir == 1) {
+      distanceDerecho = ultrasonicDerecho.read();
+    } else {
+      distanceIzquierdo = ultrasonicIzquierdo.read();
+    }
+    if (UltraMedir == 2) {
+      UltraMedir = 0;
+    } else {
+      UltraMedir++;
+    }
   } else {
-  distanceTrasero=ultrasonicTrasero.read();
+    distanceTrasero = ultrasonicTrasero.read();
   }
 }

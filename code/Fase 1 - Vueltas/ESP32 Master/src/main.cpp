@@ -161,7 +161,7 @@ void posicionamiento() {
   direccionObjetivo = 90*giros + posicionKP * ErrorPosicionActual + posicionKD * (ErrorPosicionActual - ErrorPosicionAnterior);
 }
 */
-/*
+
 void EnviarServoTelemetria()
 {
   Serial.print(estado);
@@ -176,7 +176,7 @@ void EnviarServoTelemetria()
   Serial.print(",");
   Serial.println(valorBrujula);
 }
-
+/*
 void EnviarTelemetria()
 {
   Serial.print("\t");
@@ -193,6 +193,15 @@ void EnviarTelemetria()
   Serial.print(",");
   Serial.print("\t");
   Serial.print(medidasUltrasonidos[ultraIzquierdo]);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(medidasLaseres[ultraFrontal]);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.print(medidasLaseres[ultraDerecho]);
+  Serial.print(",");
+  Serial.print("\t");
+  Serial.println(medidasLaseres[ultraIzquierdo]);
   Serial.print(",");
   Serial.print("\t");
   Serial.print(MarcaEncoder);
@@ -258,6 +267,7 @@ void setup() {
   //loadCalibration();
 
   medirUltrasonidos();
+  medirLaseres();
    
   int num =0;
   float tot =0;
@@ -273,9 +283,9 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);
 
   while (digitalRead(PIN_BOTON)){
-    medirUltrasonidos();
+    //medirUltrasonidos();
     //EnviarTelemetria();
-    delay(100);
+    //delay(100);
   };
 
   setEnable(1);
@@ -291,7 +301,7 @@ void loop() {
     valorBrujula = valorBrujula + ((mpu.getGyroZ() - offset) * Duracion_de_la_muestra / 1000);
     prev_ms_brujula = millis();
   }
-
+/*
   static uint32_t prev_ms_posicion = millis();
   if (millis() > prev_ms_posicion) {
     double dx = (medidaencoder - prev_medidaencoder) * sin(valorBrujula * (M_PI/180));
@@ -300,7 +310,7 @@ void loop() {
     posicionY = posicionY + dy;
     prev_ms_posicion = millis() + 10;
   }
-  
+  */
   static uint32_t prev_ms_direccion = millis();
   if (millis() > prev_ms_direccion) {
     ErrorDireccionActual = constrain(ErrorDireccion(valorBrujula, direccionObjetivo), -127, 127);
@@ -316,6 +326,7 @@ void loop() {
   static uint32_t prev_ms_ultrasonidos = millis();
   if (millis()> prev_ms_ultrasonidos) {
     prev_ms_ultrasonidos = millis() + 20;
+    medirLaseres();
     medirUltrasonidos();
   }
 
@@ -331,103 +342,41 @@ void loop() {
  {
 
  case e::Inico:
-  setVelocidad(30);
-  if(medidasUltrasonidos[ultraFrontal] < 100){
-    estado = e::DecidiendoGiroPrimero;
+  setVelocidad(100);
+  if(medidaencoder >= 200*14){
+    estado = e::Girando;
   }
   break;
   
 
  case e::RectoRapido:
-  if (giros == 12) {
-    setVelocidad(1);
-   estado = e::Final;
-  } else {
-    setVelocidad(70);
-    if ((medidaencoder - MarcaEncoder) > offsetEncoder) { //10cm con 120 pasos de encoder
-      estado = e::DecidiendoGiro;
-  }
-  }    
+     setVelocidad(400); //70  50
+    if (medidaencoder - MarcaEncoder >= 100*14){
+      estado = e::Girando;
+    }
   break;
-
- case e::RectoLento:
-  setVelocidad(55);
-  if(medidasUltrasonidos[ultraFrontal] <= 100){
-        estado = e::DecidiendoGiro;
-      }
-  break;
-
- case e::DecidiendoGiroPrimero:
-  setVelocidad(30);
-  if (medidasUltrasonidos[ultraIzquierdo] > 110) {
-    sentidoGiro = 1;
-    if (medidasUltrasonidos[ultraDerecho] <= 40){
-      offsetEncoder = 800;      // Default + OffSet
-    } else {
-      offsetEncoder = 400;      // Default
-    }
-    estado = e::Girando;
-  } else if (medidasUltrasonidos[ultraDerecho] > 110) {
-    sentidoGiro = -1;
-    if (medidasUltrasonidos[ultraIzquierdo] <= 40){
-      offsetEncoder = 800;      // Default + OffSet
-    } else {
-      offsetEncoder = 400;      // Default
-    }
-    estado = e::Girando;
-  }
-  if (medidasUltrasonidos[ultraFrontal] < 40) {
-
-  }
-  break;
-
-
- case e::DecidiendoGiro:
-  setVelocidad(40);
-  if ((medidasUltrasonidos[ultraIzquierdo] >= 110 ) && (sentidoGiro == 1)) {
-    MarcaEncoder = medidaencoder;
-    if (medidasUltrasonidos[ultraDerecho] <= 40){
-      offsetEncoder = 800;      // Default + OffSet
-    } else {
-      offsetEncoder = 400;      // Default
-    }
-    estado = e::Girando;
-  } else if ((medidasUltrasonidos[ultraDerecho] >= 110) && (sentidoGiro == -1)) {
-    MarcaEncoder = medidaencoder;
-    if (medidasUltrasonidos[ultraIzquierdo] <= 40){
-      offsetEncoder = 800;      // Default + OffSet
-    } else {
-      offsetEncoder = 400;      // Default
-    }
-    estado = e::Girando;
-  } else if (medidasUltrasonidos[ultraFrontal] <= 40) {
-  }
   
   break;
 
  case e::Girando:
- if (medidaencoder - MarcaEncoder > 30){
-    if(GiroRealizado){
-      direccionObjetivo = sentidoGiro*90*vuelta;
-      vuelta++;
-      ErrorDireccionActual = ErrorDireccion(valorBrujula,direccionObjetivo);
-      GiroRealizado = false;
-      giros++;
-    }
-    if (sentidoGiro * (direccionObjetivo - valorBrujula) < 10){
-      GiroRealizado = true;
-      MarcaEncoder = medidaencoder;
-      estado = e::RectoRapido;
-    }
+  if(GiroRealizado){
+    direccionObjetivo = sentidoGiro*90*vuelta;
+    vuelta++;
+    GiroRealizado = false;
+    giros++;
+  }
+  if (sentidoGiro * (direccionObjetivo - valorBrujula) < 10){
+    GiroRealizado = true;
+    MarcaEncoder = medidaencoder;
+    estado = e::RectoRapido;
   }
 
   break;
 
  case e::Final:
-  if((medidaencoder - MarcaEncoder) > 15){
     setVelocidad(0);
     setEnable(0);
-  }
+  
   break;
 
  }
