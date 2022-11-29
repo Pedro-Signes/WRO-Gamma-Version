@@ -92,7 +92,7 @@ void Motor::potencia(int pot){
   }else{
     digitalWrite(_pinDir1,LOW);
     digitalWrite(_pinDir2,LOW);
-    analogWrite(_pinEn,200);
+    analogWrite(_pinEn,150);
   }
  
 }

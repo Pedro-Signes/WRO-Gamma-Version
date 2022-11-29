@@ -10,7 +10,6 @@
 #define tamanoMinimodeEsquive 35  //55
 #define GreenSignature 1
 #define RedSignature 2
-byte camaraIzquierda = 0;
 
 #define EncodersPorCM 14
 

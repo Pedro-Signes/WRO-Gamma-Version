@@ -176,7 +176,7 @@ void setup() {
   float tot =0;
   while (num < 1000){
     if (mpu.update()){
-      num = num +1;
+      num = num + 1;
       tot = tot + mpu.getGyroZ();
     }
     delay(5);
