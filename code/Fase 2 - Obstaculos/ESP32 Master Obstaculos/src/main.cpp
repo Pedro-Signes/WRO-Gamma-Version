@@ -24,8 +24,8 @@
 #define servoKD 0
 int _setAngleAnterior;    // Valor del _setAngle anterior
 
-#define posicionKP 0.8
-#define posicionKD 30
+#define posicionKP 0.4
+#define posicionKD 20
 int posicionObjetivo = 0;
 int ErrorPosicionActual = 0;
 int ErrorPosicionAnterior = 0;
@@ -367,7 +367,7 @@ void posicionamiento() {
 // angulo € [-90, 90]
 void moverCamara(int angulo) {  // 0 == 85 | min == 0 | max == 170
   int _ang = map(angulo*1.2 + 90, 0, 180, 0, 170);  //********************************************************Aumentar o siminuir
-  servo.write(constrain(_ang, 0, 170));
+  servo.write(constrain(_ang, 50, 130));
 }
 
 // Mover el automaticamente el servo de la camara
@@ -396,7 +396,6 @@ void autoMoverCamara(double _posXblock) {
       moverCamara(-45);
     }
   }
-  
 }
 
 // Comienzo del programa
@@ -487,7 +486,7 @@ void setup() {
   delay(1000);
   setEnable(1);  //*************************************************************************************
 
-  setVelocidad(15);
+  setVelocidad(20);
   //setVelocidad(12);
   //delay(500);     //*******************************************************************
 }
@@ -599,25 +598,26 @@ void loop() {
     }
     if (tamano > tamanoMinimodeEsquive) {
       if (pixy.ccc.blocks[mayor].m_signature == RedSignature) {
-        if (posicionY <= 90*EncodersPorCM) {
+        /*if (posicionY <= 90*EncodersPorCM) {
           if (sentidoGiro) {
-            posicionObjetivo = -25 * EncodersPorCM + 5 * EncodersPorCM;
+            posicionObjetivo = -30 * EncodersPorCM + 5 * EncodersPorCM;
           } else {
-            posicionObjetivo = -25 * EncodersPorCM - 5 * EncodersPorCM;
+            posicionObjetivo = -30 * EncodersPorCM - 5 * EncodersPorCM;
           }
-        } else {
-          posicionObjetivo = -25 * EncodersPorCM;
-        }
+        } else {*/
+          posicionObjetivo = -30 * EncodersPorCM;
+        //}
       } else if (pixy.ccc.blocks[mayor].m_signature == GreenSignature) {
-        if (posicionY <= 90*EncodersPorCM) {
+        /*if (posicionY <= 90*EncodersPorCM) {
           if (sentidoGiro) {
-            posicionObjetivo = 25 * EncodersPorCM + 5 * EncodersPorCM;
+            posicionObjetivo = 30 * EncodersPorCM + 5 * EncodersPorCM;
           } else {
-            posicionObjetivo = 25 * EncodersPorCM - 5 * EncodersPorCM;
+            posicionObjetivo = 30 * EncodersPorCM - 5 * EncodersPorCM;
           }
-        } else {
-          posicionObjetivo = 25 * EncodersPorCM;
-        }      }
+        } else {*/
+          posicionObjetivo = 30 * EncodersPorCM;
+        //}
+      }
     }
   break;
 
@@ -646,7 +646,7 @@ void loop() {
       pixy.changeProg("block");
       //setVelocidad(20);
       //setVelocidad(12);
-      setVelocidad(17);  //**********************************************************************************
+      setVelocidad(25);  //**********************************************************************************
       estado = e::Recto;
     }
   break;

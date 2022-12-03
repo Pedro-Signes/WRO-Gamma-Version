@@ -272,13 +272,13 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH);
 
   while (digitalRead(PIN_BOTON)){
-    medirUltrasonidos();
+    //medirUltrasonidos();
     //EnviarTelemetria();
-    delay(100);
+    //delay(100);
   };
-
-  setEnable(1);
   delay(1000);
+  setEnable(1);
+  
 
 }
 
@@ -382,7 +382,7 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(40);
+  setVelocidad(50);
   if ((medidasUltrasonidos[ultraIzquierdo] >= 110 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     if (medidasUltrasonidos[ultraDerecho] <= 40){
