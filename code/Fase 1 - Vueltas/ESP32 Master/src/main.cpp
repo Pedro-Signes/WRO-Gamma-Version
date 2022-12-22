@@ -382,7 +382,7 @@ void loop() {
 
 
  case e::DecidiendoGiro:
-  setVelocidad(50);
+  setVelocidad(30);
   if ((medidasUltrasonidos[ultraIzquierdo] >= 110 ) && (sentidoGiro == 1)) {
     MarcaEncoder = medidaencoder;
     if (medidasUltrasonidos[ultraDerecho] <= 40){

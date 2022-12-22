@@ -537,7 +537,7 @@ void loop() {
     medirUltrasonidos();
     medirLaseres();
     if (!LecturaGiro) {
-      corregirPosicion();
+      //corregirPosicion();
       checkGiro();
       pixy.ccc.getBlocks();
     }
@@ -556,18 +556,8 @@ void loop() {
   if (millis() > prev_ms_camara) {
     prev_ms_camara = millis() + 50;
     if (!LecturaGiro) {
-      autoMoverCamara(0);}
-    /*if (!LecturaGiro) {
-      if (camaraIzquierda == 0) {
-        autoMoverCamara(5*14);
-      } else if (camaraIzquierda == 4) {
-        autoMoverCamara(-5*14);
-      }
-      camaraIzquierda++;
-      if (camaraIzquierda == 8) {
-        camaraIzquierda = 0;
-      }
-    }*/
+      autoMoverCamara(0);
+    }
   }
 
   
@@ -633,7 +623,7 @@ void loop() {
       int x1 = pixy.line.vectors[0].m_x1;
       int y1 = pixy.line.vectors[0].m_y1;
       long m = (y1 - y0) * (x1 - x0);
-      if (m > 0) {
+      /* if (m > 0) {
         sentidoGiro = false;
         sentidoParaCorregirPosicion = -1;
         //Serial.println("Sentido false");
@@ -641,7 +631,7 @@ void loop() {
         sentidoGiro = true;
         sentidoParaCorregirPosicion = 1;
         //Serial.println("Sentido true");
-      }
+      } */
       LecturaGiro = false;
       pixy.changeProg("block");
       //setVelocidad(20);
